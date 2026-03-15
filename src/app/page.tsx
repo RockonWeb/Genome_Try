@@ -16,7 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/Card'
-import { DNABackground } from '@/components/ui/DNABackground'
+import { DNABackgroundClient } from '@/components/ui/DNABackgroundClient'
 import { GENOME_BUILDS, SAMPLE_REPORT_ID, SUPPORTED_FORMATS } from '@/lib/constants'
 
 const featureCards = [
@@ -60,7 +60,7 @@ export default function Home() {
   return (
     <div className="flex flex-col gap-8 py-2">
       <section className="relative overflow-hidden rounded-[2rem] border border-genome-border bg-card px-6 py-10 md:px-10 md:py-14">
-        <DNABackground />
+        <DNABackgroundClient />
         <div className="relative z-10 flex flex-col gap-8">
           <div className="flex flex-wrap items-center gap-3">
             <Badge variant="success">Next.js 16 + React 19</Badge>

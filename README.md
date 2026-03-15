@@ -1,72 +1,67 @@
 # PhytoScope
 
-PhytoScope — веб-приложение для plant genomics research. Проект собран на `Next.js 16` и объединяет два равноправных сценария работы:
+[Русская версия](README.ru.md)
 
-- `search-first workbench` для запросов по `AGI ID`, символу гена, локусу или варианту;
-- `upload-first pipeline` для загрузки `VCF / FASTA / BAM / BED` с последующим разворачиванием исследовательского контекста.
+PhytoScope is a web platform for plant genomics research. It combines search-driven exploration, species-aware file ingestion, structured evidence aggregation, literature discovery, and persistent run management in a single product.
 
-Первая версия сделана `Arabidopsis-first`: максимальная глубина данных и интерфейса ориентирована на `Arabidopsis thaliana`, но архитектура остаётся species-generic и допускает расширение на другие растения.
+The current product is optimized for `Arabidopsis thaliana`, while keeping a multi-species architecture for broader plant research workflows.
 
-## Что сейчас умеет проект
+## Product Capabilities
 
-- Главная страница с описанием продукта, capability matrix и входами в `workbench` и `upload`.
-- Страница `/workbench` для поиска по гену, локусу и варианту.
-- Страница `/upload` для plant-aware загрузки файлов с выбором `species` и `assembly`.
-- Страница `/dashboard` с unified research view для загруженного анализа.
-- Страница `/literature` для серверного поиска и ранжирования статей по query/species/year/sort.
-- Страница `/reports` с архивом запусков, фильтрацией по `species/status/format/search`, compare mode для двух completed runs, экспортом `CSV/PDF` и быстрым доступом к последнему run.
-- Локальное persistent хранилище runs, payloads, source cache и upload artifacts в `.phyto/`.
-- Агрегация данных из внешних источников с graceful degradation и SQLite-backed TTL cache вместо silent mock fallback.
+- Search workspace for `AGI ID`, gene symbol, locus, or variant queries.
+- Upload pipeline for `VCF`, `FASTA`, `BAM`, and `BED` files with species and assembly selection.
+- Analysis dashboard that consolidates variant context, gene function, expression, regulation, orthology, interactions, and literature.
+- Literature workspace with server-side filtering and ranking over `Europe PMC`.
+- Run archive with search, filtering, comparison mode, and `CSV` / `PDF` export.
+- Persistent local storage for runs, payloads, source health snapshots, uploaded files, and generated artifacts.
+- Graceful degradation for external sources so the interface remains usable under partial source failure.
 
-## Исследовательский фокус
+## Research Model
 
-Workbench собирает в одном экране:
+PhytoScope is built around plant-specific evidence rather than a clinical or human-genome workflow. The core data model is organized around:
 
-- `variant context`
-- `gene function / GO`
-- `expression`
-- `regulation`
-- `interactions`
-- `orthology`
+- `species`
+- `assembly`
+- `gene`
+- `locus`
+- `variant`
 - `literature evidence`
-- `source status`
+- `source health`
 
-То есть проект больше не является human-clinical demo: клинические поля и `hg38/hg19` удалены, а модель данных теперь строится вокруг `species + assembly` и plant-specific evidence.
+## Data Sources
 
-## Основные источники данных
-
-Базовый live-слой использует:
+The live evidence layer uses:
 
 - `Ensembl Plants REST`
 - `BAR ThaleMine`
 - `Expression Atlas`
 - `Europe PMC`
 
-`TAIR` учитывается как опциональный premium connector: интерфейс не зависит от него жёстко и умеет работать без него.
+`TAIR` is treated as an optional connector. The product does not depend on it for baseline operation.
 
-## Технологический стек
+## Technology Stack
 
-| Слой | Технологии |
-|---|---|
-| Фреймворк | Next.js 16, App Router |
-| UI | React 19, Tailwind CSS 4 |
-| Язык | TypeScript (`strict`) |
-| Состояние | Zustand |
-| Иконки | Lucide React |
-| UI-примитивы | Headless UI, Radix Slot, CVA |
-| Внешние данные | Ensembl Plants, BAR ThaleMine, Expression Atlas, Europe PMC |
-| Качество | ESLint 9, TypeScript, Node test runner, Prettier |
+| Layer         | Technologies                                     |
+| ------------- | ------------------------------------------------ |
+| Framework     | Next.js 16, App Router                           |
+| UI            | React 19, Tailwind CSS 4                         |
+| Language      | TypeScript (`strict`)                            |
+| State         | Zustand                                          |
+| UI primitives | Headless UI, Radix Slot, CVA                     |
+| Icons         | Lucide React                                     |
+| Storage       | SQLite + local filesystem in `.phyto/`           |
+| Quality       | ESLint 9, TypeScript, Node test runner, Prettier |
 
-## Быстрый старт
+## Quick Start
 
 ```bash
 npm install
 npm run dev
 ```
 
-После запуска приложение доступно на [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000).
 
-## Скрипты
+## Scripts
 
 ```bash
 npm run dev
@@ -78,13 +73,15 @@ npm run test
 npm run format
 ```
 
-## Маршруты
+## Routes
 
 ### `/`
-Маркетинговая и навигационная точка входа с описанием продукта и capability matrix.
+
+Landing page with product overview, entry points, and species capability summary.
 
 ### `/workbench`
-Search-first интерфейс. Принимает:
+
+Search-first workspace for:
 
 - `AT1G01010`
 - `NAC001`
@@ -92,20 +89,24 @@ Search-first интерфейс. Принимает:
 - `1:3631 G>A`
 
 ### `/upload`
-Upload-first интерфейс для plant genomics файлов. Позволяет выбрать `species`, `assembly`, загрузить файл и создать persistent run.
+
+Species-aware ingestion flow for plant genomics files. `VCF` runs are annotated immediately; `FASTA`, `BAM`, and `BED` runs are registered as persistent queued analyses with stored source files and artifacts.
 
 ### `/dashboard`
-Показывает результат конкретного запуска: completed VCF workbench либо queued/failed status для тяжёлых или неуспешных пайплайнов.
+
+Unified research view for a selected analysis, including completed results and transparent non-completed run states.
 
 ### `/literature`
-Отдельный literature workspace с параметрами `q`, `species`, `yearFrom`, `sort`, `source`.
+
+Dedicated literature discovery workspace with `q`, `species`, `yearFrom`, `sort`, and `source` parameters.
 
 ### `/reports`
-Архив completed/queued/failed runs с фильтрацией по ключевым полям, compare mode для двух completed runs и экспортом `CSV/PDF`.
+
+Run archive with filtering, comparison mode for two completed analyses, and export actions.
 
 ## API
 
-Проект уже содержит прикладной API-слой:
+The application ships with an integrated API layer:
 
 - `POST /api/analysis/upload`
 - `GET /api/analyses`
@@ -117,26 +118,22 @@ Upload-first интерфейс для plant genomics файлов. Позвол
 - `GET /api/literature`
 - `GET /api/source-status`
 
-### Поведение upload-режима
+## Storage Layout
 
-- Для `VCF` используется plant-aware annotation через `Ensembl overlap` и эвристическая оценка impact/consequence.
-- Для `FASTA/BAM/BED` создаётся честный `queued` run с сохранением исходного файла в `.phyto/uploads/` и status detail о том, что тяжёлый backend ещё не подключён.
+PhytoScope stores working data locally in `.phyto/`:
 
-## Локальное хранилище
+- `.phyto/phyto.db` — SQLite database for analyses, payloads, source cache, and source health checks.
+- `.phyto/uploads/<analysisId>/` — original uploaded files.
+- `.phyto/artifacts/<analysisId>/` — generated JSON artifacts for summary, variants, and workbench state.
 
-Foundation v1 хранит рабочие данные локально:
-
-- `.phyto/phyto.db` — SQLite база для `analyses`, `analysis_payloads`, `source_cache`, `source_health_checks`.
-- `.phyto/uploads/<analysisId>/` — оригинальные загруженные файлы.
-- `.phyto/artifacts/<analysisId>/` — JSON-снимки summary, variants и workbench.
-
-## Структура проекта
+## Project Structure
 
 ```text
 src/
 ├── app/
 │   ├── api/
 │   ├── dashboard/
+│   ├── literature/
 │   ├── reports/
 │   ├── upload/
 │   ├── workbench/
@@ -153,6 +150,7 @@ src/
 │   ├── constants.ts
 │   ├── ensembl.ts
 │   ├── exporters.ts
+│   ├── literature.ts
 │   ├── mockData.ts
 │   ├── query.ts
 │   ├── researchAggregator.ts
@@ -165,30 +163,24 @@ src/
     └── genome.ts
 ```
 
-## Тесты
+## Test Coverage
 
-Automated test layer покрывает:
+Automated tests cover:
 
-- `src/lib/query.test.ts` проверяет нормализацию gene/locus/variant query.
-- `src/lib/ensembl.test.ts` проверяет VCF parsing и plant variant annotation contract.
-- `src/lib/persistence.test.ts` проверяет SQLite persistence, serialization и TTL cache behavior.
-- `src/lib/routes.test.ts` проверяет upload/analyses/literature/source-status routes.
-- `src/lib/analysisService.test.ts` проверяет фильтрацию отчётов и compare summary logic.
-- `src/lib/researchAggregator.test.ts` проверяет degraded empty-state без возврата к mock runtime.
+- query normalization for gene, locus, and variant inputs
+- plant-oriented VCF parsing and variant annotation contracts
+- persistence, serialization, and TTL-cached source data
+- upload, analyses, literature, and source-status routes
+- report filtering and run comparison logic
+- degraded empty-state behavior for workbench aggregation
 
-## Текущее состояние
+## Verification
 
-Проект собран и проверен командами:
+The project is routinely validated with:
 
 ```bash
-npm run test
 npm run lint
 npm run typecheck
+npm run test
 npm run build
 ```
-
-## Что можно развивать дальше
-
-- Реальный backend для тяжёлых `BAM/FASTA/BED` пайплайнов.
-- Более глубокие адаптеры для `TAIR`, `GO`, `Expression Atlas` и species-specific ресурсов.
-- Saved collections, bibliography export и richer literature curation поверх нового workspace.

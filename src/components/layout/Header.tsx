@@ -28,6 +28,10 @@ const pageMeta: Record<string, { title: string; subtitle: string }> = {
     title: 'Run archive',
     subtitle: 'History of completed and processing plant genomics analyses.',
   },
+  '/literature': {
+    title: 'Literature workspace',
+    subtitle: 'Search, filter, and rank Europe PMC evidence around the current plant genomics query.',
+  },
 }
 
 export const Header = () => {

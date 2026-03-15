@@ -4,6 +4,7 @@ import {
   BookOpen,
   FlaskConical,
   Leaf,
+  LibraryBig,
   ScanSearch,
   Upload,
 } from 'lucide-react'
@@ -17,7 +18,7 @@ import {
   CardTitle,
 } from '@/components/ui/Card'
 import { DNABackgroundClient } from '@/components/ui/DNABackgroundClient'
-import { SAMPLE_QUERIES, SAMPLE_REPORT_ID, SPECIES_OPTIONS, SUPPORTED_FORMATS } from '@/lib/constants'
+import { SAMPLE_QUERIES, SPECIES_OPTIONS, SUPPORTED_FORMATS } from '@/lib/constants'
 
 const featureCards = [
   {
@@ -88,7 +89,10 @@ export default function Home() {
               </Link>
             </Button>
             <Button asChild variant="ghost" size="lg" className="h-12 px-8 text-base">
-              <Link href={`/dashboard?id=${SAMPLE_REPORT_ID}`}>Открыть sample dashboard</Link>
+              <Link href="/literature">
+                Literature workspace
+                <LibraryBig className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
           </div>
 
@@ -144,8 +148,8 @@ export default function Home() {
           <CardContent className="grid gap-4">
             {[
               'Введите AGI ID, символ, локус или вариант в search-first workbench.',
-              'Либо загрузите VCF/BAM/FASTA/BED и получите plant-aware summary по образцу.',
-              'Сопоставьте варианты с экспрессией, регуляцией, GO и recent literature links.',
+              'Либо загрузите VCF/BAM/FASTA/BED и получите persistent run с честным статусом pipeline.',
+              'Сопоставьте варианты с экспрессией, регуляцией, GO и выносите статьи в отдельный literature workspace.',
             ].map((step, index) => (
               <div
                 key={step}

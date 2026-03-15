@@ -1,4 +1,3 @@
-import { mockAnalysesById, mockReports } from '@/lib/mockData'
 import type {
   AnalysisSummary,
   AssemblyId,
@@ -75,13 +74,34 @@ export const genomeApi = {
   },
 
   async getReports(): Promise<AnalysisSummary[]> {
-    await delay(220)
-    return mockReports.map((report) => ({ ...report }))
+    await delay(120)
+    const response = await fetch('/api/analyses', {
+      method: 'GET',
+      cache: 'no-store',
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch reports')
+    }
+
+    return (await response.json()) as AnalysisSummary[]
   },
 
   async getAnalysisResult(id: string): Promise<UploadAnalysisResult | null> {
-    await delay(260)
-    const result = mockAnalysesById[id]
-    return result ? cloneResult(result) : null
+    await delay(180)
+    const response = await fetch(`/api/analyses/${encodeURIComponent(id)}`, {
+      method: 'GET',
+      cache: 'no-store',
+    })
+
+    if (response.status === 404) {
+      return null
+    }
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch analysis result')
+    }
+
+    return cloneResult((await response.json()) as UploadAnalysisResult)
   },
 }

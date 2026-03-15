@@ -149,8 +149,8 @@ export default function UploadPage() {
               <p className="mt-3 text-sm font-semibold text-white">Plant research workbench</p>
               <p className="mt-2 text-sm leading-6 text-slate-400">
                 `VCF` проходит через Ensembl overlap-driven annotation и heuristic impact
-                inference. Остальные форматы получают structured fallback с focus gene,
-                variant cards и переходом в unified dashboard.
+                inference. `BAM/FASTA/BED` создают persistent queued run с сохранением файла
+                и явным статусом ожидания backend pipeline.
               </p>
             </div>
 
@@ -197,8 +197,9 @@ export default function UploadPage() {
                   Перетащите plant genomics файл в область загрузки
                 </h2>
                 <p className="mt-3 max-w-xl text-sm leading-7 text-slate-400">
-                  Для `VCF` вы получите plant-specific consequence terms, для `BAM/FASTA/BED`
-                  интерфейс сохранит context через structured fallback и focus gene.
+                  Для `VCF` вы получите plant-specific consequence terms и live workbench. Для
+                  `BAM/FASTA/BED` приложение сохранит run локально и честно покажет queued state,
+                  пока тяжёлый backend не подключён.
                 </p>
                 <Button
                   size="lg"
@@ -298,7 +299,7 @@ export default function UploadPage() {
           <CardHeader>
             <CardTitle>Поддерживаемые форматы</CardTitle>
             <CardDescription>
-              Все форматы валидируются в UI, но VCF получает самую богатую аннотацию.
+              Все форматы валидируются в UI, но только VCF сейчас завершается live-аннотацией.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -337,7 +338,7 @@ export default function UploadPage() {
             <div className="flex items-start gap-3 rounded-2xl border border-genome-border bg-muted/40 p-4">
               <Database className="mt-0.5 h-5 w-5 text-secondary" />
               <p className="text-sm leading-6 text-slate-400">
-                История запусков сохраняет species, assembly, focus gene и export-ready variant view.
+                История запусков теперь переживает reload и хранится в локальном workspace `.phyto/`.
               </p>
             </div>
           </CardContent>

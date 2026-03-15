@@ -1,7 +1,8 @@
 import { getSpeciesDefinition } from '@/lib/constants'
-import { getAllMockVariants } from '@/lib/mockData'
+import { listStoredVariants } from '@/lib/server/analysisRepository'
+import { createAnalysisResult } from '@/lib/server/analysisFactory'
+import { fetchCachedJson } from '@/lib/server/sourceCache'
 import type {
-  AnalysisSummary,
   AssemblyId,
   GeneProfile,
   OrthologyProfile,
@@ -13,6 +14,7 @@ import type {
 
 const ENSEMBL_BASE_URL = 'https://rest.ensembl.org'
 const MAX_ANNOTATED_VARIANTS = 16
+const ENSEMBL_CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
 interface OverlapFeature {
   id: string
@@ -75,33 +77,19 @@ interface ParsedVcfRecord {
 
 export class VcfAnnotationInputError extends Error {}
 
-const average = (values: number[]) =>
-  values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0
-
 const normalizeChromosome = (value: string) =>
   value.replace(/^chr/i, '').replace(/^Mt$/i, 'M').replace(/^Pt$/i, 'C').toUpperCase()
 
 const isLiteralAllele = (value: string) => /^[ACGTN]+$/i.test(value)
 
 const safeFetchJson = async <T>(url: string) => {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 12000)
+  const { payload } = await fetchCachedJson<T>({
+    source: 'ensembl',
+    url,
+    ttlMs: ENSEMBL_CACHE_TTL_MS,
+  })
 
-  try {
-    const response = await fetch(url, {
-      headers: { Accept: 'application/json' },
-      cache: 'no-store',
-      signal: controller.signal,
-    })
-
-    if (!response.ok) {
-      throw new Error(`Ensembl returned ${response.status}`)
-    }
-
-    return (await response.json()) as T
-  } finally {
-    clearTimeout(timeout)
-  }
+  return payload
 }
 
 const parseInfoEntries = (value: string) =>
@@ -407,38 +395,6 @@ export const annotatePlantVariant = async ({
   }
 }
 
-const createSummary = ({
-  id,
-  fileName,
-  fileSize,
-  speciesId,
-  assemblyId,
-  variants,
-}: {
-  id: string
-  fileName: string
-  fileSize: number
-  speciesId: SpeciesId
-  assemblyId: AssemblyId
-  variants: VariantAnnotation[]
-}): AnalysisSummary => ({
-  id,
-  sampleId: id,
-  fileName,
-  format: 'VCF',
-  speciesId,
-  assemblyId,
-  date: new Date().toISOString().slice(0, 10),
-  status: 'completed',
-  variantCount: variants.length,
-  highImpactVariants: variants.filter((variant) => variant.predictedImpact === 'HIGH').length,
-  meanDepth: Number(average(variants.map((variant) => variant.depth)).toFixed(1)),
-  meanQuality: Number(average(variants.map((variant) => variant.quality)).toFixed(1)),
-  fileSizeMb: Math.max(0.01, Number((fileSize / (1024 * 1024)).toFixed(2))),
-  focusGene: variants[0]?.geneSymbol ?? 'N/A',
-  insightCount: variants.length + 6,
-})
-
 export const supportsPlantAnnotation = (fileName: string) =>
   fileName.toLowerCase().endsWith('.vcf')
 
@@ -494,19 +450,18 @@ export const annotateVcfWithEnsembl = async (
 
   const analysisId = `PS-UP-${crypto.randomUUID().replace(/-/g, '').slice(0, 6).toUpperCase()}`
 
-  return {
-    summary: createSummary({
-      id: analysisId,
-      fileName: options.fileName,
-      fileSize: options.fileSize,
-      speciesId: options.speciesId,
-      assemblyId: options.assemblyId,
-      variants,
-    }),
+  return createAnalysisResult({
+    id: analysisId,
+    fileName: options.fileName,
+    fileSize: options.fileSize,
+    speciesId: options.speciesId,
+    assemblyId: options.assemblyId,
+    status: 'completed',
+    pipelineMode: 'vcf_live',
     variants,
     workbench: null,
-  }
+  })
 }
 
 export const getLocalVariantContext = (geneId: string) =>
-  getAllMockVariants().filter((variant) => variant.geneId === geneId)
+  listStoredVariants().filter((variant) => variant.geneId === geneId)

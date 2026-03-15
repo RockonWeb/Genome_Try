@@ -1,10 +1,12 @@
 'use client'
 
+import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
 import {
   BookOpen,
   ExternalLink,
   Leaf,
+  LibraryBig,
   Link2,
   Microscope,
   Orbit,
@@ -87,6 +89,18 @@ export function WorkbenchResults({
             ) : null}
 
             <div className="flex flex-wrap gap-3">
+              <Button asChild variant="ghost" size="sm">
+                <Link
+                  href={`/literature?q=${encodeURIComponent(
+                    workbench.gene?.id ??
+                      workbench.query.geneSymbol ??
+                      workbench.query.normalized,
+                  )}&species=${workbench.query.speciesId}`}
+                >
+                  <LibraryBig className="mr-2 h-4 w-4" />
+                  Literature workspace
+                </Link>
+              </Button>
               {workbench.supportingLinks.slice(0, 4).map((link) => (
                 <Button key={link.url} asChild variant="outline" size="sm">
                   <a href={link.url} target="_blank" rel="noreferrer">
@@ -107,22 +121,29 @@ export function WorkbenchResults({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {workbench.sourceStatus.map((status) => (
-              <div
-                key={status.source}
-                className="rounded-2xl border border-genome-border bg-muted/40 p-4"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-white">{status.label}</p>
-                    <p className="mt-1 text-xs text-slate-500">{status.detail}</p>
+            {workbench.sourceStatus.length ? (
+              workbench.sourceStatus.map((status) => (
+                <div
+                  key={status.source}
+                  className="rounded-2xl border border-genome-border bg-muted/40 p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-white">{status.label}</p>
+                      <p className="mt-1 text-xs text-slate-500">{status.detail}</p>
+                      <p className="mt-2 text-[11px] uppercase tracking-[0.18em] text-slate-600">
+                        {status.observedVia} · {status.lastChecked}
+                      </p>
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${healthClasses[status.status]}`}>
+                      {status.status}
+                    </span>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-medium ${healthClasses[status.status]}`}>
-                    {status.status}
-                  </span>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <EmptyPanel message="Source health snapshot пока недоступен." />
+            )}
           </CardContent>
         </Card>
       </section>
@@ -286,10 +307,26 @@ export function WorkbenchResults({
 
       <Card>
         <CardHeader>
-          <CardTitle>Evidence / literature</CardTitle>
-          <CardDescription>
-            Curated summaries + links without превращения интерфейса в отдельный literature workspace.
-          </CardDescription>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <CardTitle>Evidence / literature</CardTitle>
+              <CardDescription>
+                Curated summaries + links с быстрым переходом в отдельный literature workspace.
+              </CardDescription>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link
+                href={`/literature?q=${encodeURIComponent(
+                  workbench.gene?.id ??
+                    workbench.query.geneSymbol ??
+                    workbench.query.normalized,
+                )}&species=${workbench.query.speciesId}`}
+              >
+                <LibraryBig className="mr-2 h-4 w-4" />
+                Open workspace
+              </Link>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="grid gap-4 xl:grid-cols-2">
           {workbench.literature.length ? (

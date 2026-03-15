@@ -1,6 +1,8 @@
 export type SupportedFormat = 'FASTA' | 'VCF' | 'BAM' | 'BED'
 
-export type AnalysisStatus = 'processing' | 'completed' | 'failed'
+export type AnalysisStatus = 'queued' | 'processing' | 'completed' | 'failed'
+
+export type PipelineMode = 'vcf_live' | 'deferred_backend'
 
 export type SpeciesId =
   | 'arabidopsis_thaliana'
@@ -31,6 +33,12 @@ export type EvidenceType =
 export type QueryType = 'gene' | 'symbol' | 'locus' | 'variant' | 'unknown'
 
 export type SourceHealth = 'online' | 'degraded' | 'offline'
+
+export type SourceObservation = 'live' | 'cache'
+
+export type LiteratureSort = 'relevance' | 'citations' | 'newest'
+
+export type LiteratureSource = 'Europe PMC'
 
 export interface AssemblyDefinition {
   id: AssemblyId
@@ -73,6 +81,7 @@ export interface SourceStatus {
   coverage: 'full' | 'partial' | 'link-only'
   detail: string
   lastChecked: string
+  observedVia: SourceObservation
 }
 
 export interface GeneLocation {
@@ -254,12 +263,31 @@ export interface AnalysisSummary {
   fileSizeMb: number
   focusGene: string
   insightCount: number
+  createdAt: string
+  updatedAt: string
+  statusDetail: string | null
+  pipelineMode: PipelineMode
+  storedFilePath: string | null
 }
 
 export interface UploadAnalysisResult {
   summary: AnalysisSummary
   variants: VariantAnnotation[]
   workbench: WorkbenchData | null
+}
+
+export interface LiteratureFilters {
+  yearFrom: number
+  sort: LiteratureSort
+  source: LiteratureSource
+  refresh: boolean
+}
+
+export interface LiteratureSearchResult {
+  query: string
+  speciesId: SpeciesId
+  filters: LiteratureFilters
+  items: LiteratureCard[]
 }
 
 export interface ChartData {

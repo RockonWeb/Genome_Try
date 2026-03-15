@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { Suspense, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { ArrowLeft, Microscope } from 'lucide-react'
+import { ArrowLeft, LibraryBig, Microscope } from 'lucide-react'
 import { WorkbenchResults } from '@/components/research/WorkbenchResults'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -85,16 +85,23 @@ function DashboardPageContent() {
             Статус анализа
           </Badge>
           <CardTitle className="text-3xl">
-            Этот run ещё не готов к полному research view
+            {currentAnalysis.status === 'failed'
+              ? 'Этот run завершился с ошибкой'
+              : 'Этот run ещё не готов к полному research view'}
           </CardTitle>
           <CardDescription>
-            После завершения вы получите variant context, focus gene и evidence cards.
+            {currentAnalysis.status === 'failed'
+              ? 'Локальный run сохранён, но live-аннотация не смогла завершиться.'
+              : 'После подключения backend pipeline этот run сможет перейти к полному research view.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="rounded-2xl border border-genome-border bg-muted/40 p-4 text-sm text-slate-300">
             Текущий статус:{' '}
             <span className="font-semibold text-white">{currentAnalysis.status}</span>
+            {currentAnalysis.statusDetail ? (
+              <p className="mt-2 text-slate-400">{currentAnalysis.statusDetail}</p>
+            ) : null}
           </div>
           <div className="flex gap-3">
             <Button asChild>
@@ -120,12 +127,28 @@ function DashboardPageContent() {
           <p className="mt-2 text-sm text-slate-400">
             {currentAnalysis.fileName} · {currentAnalysis.speciesId} · {currentAnalysis.assemblyId}
           </p>
+          {currentAnalysis.statusDetail ? (
+            <p className="mt-2 text-sm text-slate-500">{currentAnalysis.statusDetail}</p>
+          ) : null}
         </div>
         <div className="flex flex-wrap gap-3">
           <Button variant="outline" onClick={() => downloadVariantsCsv(currentAnalysis, variants)}>
             CSV
           </Button>
           <Button onClick={() => printAnalysisReport(currentAnalysis, variants)}>PDF</Button>
+          <Button asChild variant="outline">
+            <Link
+              href={`/literature?q=${encodeURIComponent(
+                currentWorkbench?.gene?.id ??
+                  currentWorkbench?.query.geneSymbol ??
+                  currentWorkbench?.query.normalized ??
+                  currentAnalysis.focusGene,
+              )}&species=${currentAnalysis.speciesId}`}
+            >
+              <LibraryBig className="mr-2 h-4 w-4" />
+              Literature
+            </Link>
+          </Button>
           <Button asChild variant="ghost">
             <Link href="/reports">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -172,7 +195,7 @@ function DashboardLoadingState() {
         <div>
           <p className="text-lg font-semibold text-white">Подгружаю plant analysis</p>
           <p className="mt-2 text-sm text-slate-400">
-            Готовлю variant context и unified workbench для текущего образца.
+            Загружаю persistent analysis record и связанный research workbench.
           </p>
         </div>
       </CardContent>

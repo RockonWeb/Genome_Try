@@ -54,7 +54,9 @@ export default function ReportsPage() {
   }, [fetchReports, reports.length])
 
   const completedReports = reports.filter((report) => report.status === 'completed')
-  const processingReports = reports.filter((report) => report.status === 'processing')
+  const queuedReports = reports.filter(
+    (report) => report.status === 'queued' || report.status === 'processing',
+  )
   const storageUsedGb = useMemo(
     () => reports.reduce((sum, report) => sum + report.fileSizeMb, 0) / 1024,
     [reports],
@@ -129,7 +131,7 @@ export default function ReportsPage() {
 
         <section className="grid gap-4 md:grid-cols-3">
           <ReportMetric title="Completed" value={`${completedReports.length}`} helper="Готовы к research review" />
-          <ReportMetric title="Processing" value={`${processingReports.length}`} helper="Ещё в pipeline" />
+          <ReportMetric title="Queued" value={`${queuedReports.length}`} helper="Ожидают backend pipeline" />
           <ReportMetric title="Avg depth" value={`${averageDepth.toFixed(1)}`} helper="По завершённым отчётам" />
         </section>
 
@@ -230,7 +232,7 @@ export default function ReportsPage() {
           <CardHeader>
             <CardTitle>Хранилище</CardTitle>
             <CardDescription>
-              Простая оценка локального архива запусков.
+              Реальная оценка локального persistent архива запусков.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -250,8 +252,8 @@ export default function ReportsPage() {
               />
             </div>
             <p className="text-sm leading-6 text-slate-400">
-              При подключении полноценного backend этот блок можно заменить на реальные квоты,
-              storage tiers и cold archive rules.
+              Архив строится из локального `.phyto/` workspace. Позже этот блок можно расширить до
+              квот, storage tiers и cold archive rules.
             </p>
           </CardContent>
         </Card>
@@ -339,6 +341,15 @@ function renderStatus(status: AnalysisSummary['status']) {
       <div className="flex items-center gap-2 text-sm text-amber-400">
         <Clock3 className="h-4 w-4" />
         В обработке
+      </div>
+    )
+  }
+
+  if (status === 'queued') {
+    return (
+      <div className="flex items-center gap-2 text-sm text-amber-400">
+        <Clock3 className="h-4 w-4" />
+        В очереди
       </div>
     )
   }

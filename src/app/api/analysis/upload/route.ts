@@ -7,7 +7,12 @@ import {
   VcfAnnotationInputError,
 } from '@/lib/ensembl'
 import { buildWorkbenchFromQuery } from '@/lib/researchAggregator'
-import { createUploadedAnalysis } from '@/lib/mockData'
+import { writeAnalysisArtifacts, saveUploadedFile } from '@/lib/server/analysisFiles'
+import {
+  createAnalysisId,
+  createAnalysisResult,
+} from '@/lib/server/analysisFactory'
+import { saveAnalysisResult } from '@/lib/server/analysisRepository'
 import type { AssemblyId } from '@/types/genome'
 
 const requestSchema = z.object({
@@ -21,6 +26,23 @@ const requestSchema = z.object({
 })
 
 export const runtime = 'nodejs'
+
+const enrichAndPersistResult = async (result: Awaited<ReturnType<typeof annotateVcfWithEnsembl>>, file: File) => {
+  const storedFile = await saveUploadedFile(result.summary.id, file)
+  const persistedResult = {
+    ...result,
+    summary: {
+      ...result.summary,
+      storedFilePath: storedFile.workspacePath,
+      updatedAt: new Date().toISOString(),
+    },
+  }
+
+  saveAnalysisResult(persistedResult)
+  await writeAnalysisArtifacts(persistedResult)
+
+  return persistedResult
+}
 
 export async function POST(request: Request) {
   try {
@@ -50,7 +72,21 @@ export async function POST(request: Request) {
     const normalizedAssemblyId = assemblyId as AssemblyId
 
     if (!supportsPlantAnnotation(file.name)) {
-      return NextResponse.json(createUploadedAnalysis(file, speciesId, normalizedAssemblyId))
+      const queuedResult = createAnalysisResult({
+        id: createAnalysisId(speciesId),
+        fileName: file.name,
+        fileSize: file.size,
+        speciesId,
+        assemblyId: normalizedAssemblyId,
+        status: 'queued',
+        pipelineMode: 'deferred_backend',
+        variants: [],
+        workbench: null,
+        statusDetail:
+          'Heavy compute pipeline for BAM/FASTA/BED is not connected in this workspace yet. Run saved in queue-only mode.',
+      })
+
+      return NextResponse.json(await enrichAndPersistResult(queuedResult, file))
     }
 
     try {
@@ -65,16 +101,37 @@ export async function POST(request: Request) {
         ? await buildWorkbenchFromQuery(focusGene, speciesId).catch(() => null)
         : null
 
-      return NextResponse.json({
-        ...result,
-        workbench,
-      })
+      return NextResponse.json(
+        await enrichAndPersistResult(
+          {
+            ...result,
+            workbench,
+          },
+          file,
+        ),
+      )
     } catch (error) {
       if (error instanceof VcfAnnotationInputError) {
         return NextResponse.json({ message: error.message }, { status: 400 })
       }
 
-      return NextResponse.json(createUploadedAnalysis(file, speciesId, normalizedAssemblyId))
+      const failedResult = createAnalysisResult({
+        id: createAnalysisId(speciesId),
+        fileName: file.name,
+        fileSize: file.size,
+        speciesId,
+        assemblyId: normalizedAssemblyId,
+        status: 'failed',
+        pipelineMode: 'vcf_live',
+        variants: [],
+        workbench: null,
+        statusDetail:
+          error instanceof Error
+            ? error.message
+            : 'VCF analysis failed before a persistent workbench could be assembled.',
+      })
+
+      return NextResponse.json(await enrichAndPersistResult(failedResult, file))
     }
   } catch {
     return NextResponse.json(

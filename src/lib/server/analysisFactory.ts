@@ -12,7 +12,9 @@ import type {
 } from '@/types/genome'
 
 const average = (values: number[]) =>
-  values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0
+  values.length
+    ? values.reduce((sum, value) => sum + value, 0) / values.length
+    : 0
 
 const speciesPrefix = (speciesId: SpeciesId) =>
   speciesId === 'arabidopsis_thaliana' ? 'AT' : 'PL'
@@ -73,9 +75,15 @@ export const createAnalysisSummary = ({
   date: createdAt.slice(0, 10),
   status,
   variantCount: variants.length,
-  highImpactVariants: variants.filter((variant) => variant.predictedImpact === 'HIGH').length,
-  meanDepth: Number(average(variants.map((variant) => variant.depth)).toFixed(1)),
-  meanQuality: Number(average(variants.map((variant) => variant.quality)).toFixed(1)),
+  highImpactVariants: variants.filter(
+    (variant) => variant.predictedImpact === 'HIGH',
+  ).length,
+  meanDepth: Number(
+    average(variants.map((variant) => variant.depth)).toFixed(1),
+  ),
+  meanQuality: Number(
+    average(variants.map((variant) => variant.quality)).toFixed(1),
+  ),
   fileSizeMb: Math.max(0.01, Number((fileSize / (1024 * 1024)).toFixed(2))),
   focusGene:
     workbench?.gene?.symbol ??

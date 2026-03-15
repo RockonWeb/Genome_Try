@@ -14,7 +14,9 @@ import type {
 const now = '2026-03-15'
 
 const average = (values: number[]) =>
-  values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0
+  values.length
+    ? values.reduce((sum, value) => sum + value, 0) / values.length
+    : 0
 
 const sourceStatus = (): SourceStatus[] => [
   {
@@ -31,7 +33,7 @@ const sourceStatus = (): SourceStatus[] => [
     label: 'BAR ThaleMine',
     status: 'online',
     coverage: 'partial',
-    detail: 'Curated Arabidopsis summary и search доступны.',
+    detail: 'Кураторское описание Arabidopsis и поиск доступны.',
     lastChecked: now,
     observedVia: 'live',
   },
@@ -40,7 +42,7 @@ const sourceStatus = (): SourceStatus[] => [
     label: 'Expression Atlas',
     status: 'online',
     coverage: 'partial',
-    detail: 'Bioentity metadata и atlas links доступны.',
+    detail: 'Bioentity-метаданные и ссылки на атлас доступны.',
     lastChecked: now,
     observedVia: 'live',
   },
@@ -49,7 +51,7 @@ const sourceStatus = (): SourceStatus[] => [
     label: 'Europe PMC',
     status: 'online',
     coverage: 'full',
-    detail: 'Literature cards и citation counts доступны.',
+    detail: 'Карточки публикаций и число цитирований доступны.',
     lastChecked: now,
     observedVia: 'live',
   },
@@ -84,7 +86,7 @@ const geneCatalog: Record<string, GeneSeed> = {
       assemblyId: 'TAIR10',
       biotype: 'protein_coding',
       description:
-        'Member of the NAC family of plant-specific transcriptional regulators with membrane-associated behavior and stress-related evidence.',
+        'Представитель семейства NAC, связанный с мембраной и участвующий в стресс-ответе растений.',
       aliases: ['ANAC001', 'NTL10', 'AT1G01010'],
       location: { chromosome: '1', start: 3631, end: 5899, strand: 1 },
       sourceSummaries: [
@@ -92,22 +94,23 @@ const geneCatalog: Record<string, GeneSeed> = {
           source: 'thalemine',
           label: 'BAR ThaleMine',
           description:
-            'Curated Arabidopsis summary highlights NAC-family transcription regulation and membrane association.',
+            'Кураторское описание Arabidopsis подчёркивает транскрипционную регуляцию семейства NAC и связь с мембраной.',
         },
         {
           source: 'ensembl',
           label: 'Ensembl Plants',
-          description: 'Reference gene model on TAIR10 with canonical transcript AT1G01010.1.',
+          description:
+            'Референсная модель гена на TAIR10 с каноническим транскриптом AT1G01010.1.',
         },
       ],
       externalLinks: [
         {
-          label: 'Ensembl gene page',
+          label: 'Страница гена в Ensembl',
           source: 'Ensembl Plants',
           url: 'https://plants.ensembl.org/Arabidopsis_thaliana/Gene/Summary?g=AT1G01010',
         },
         {
-          label: 'Expression Atlas',
+          label: 'Страница в Expression Atlas',
           source: 'Expression Atlas',
           url: 'https://www.ebi.ac.uk/gxa/genes/AT1G01010?species=arabidopsis_thaliana',
         },
@@ -116,15 +119,45 @@ const geneCatalog: Record<string, GeneSeed> = {
     },
     expression: {
       summary:
-        'Выражен в leaf, root и floral tissues; expression atlas hints at condition-sensitive regulation in stress-associated contexts.',
+        'Ген экспрессируется в листьях, корнях и цветочных тканях; данные атласа намекают на регуляцию, зависящую от условий стресса.',
       tissues: [
-        { label: 'Leaf', value: 72, unit: 'relative', context: 'PO leaf structures', source: 'Expression Atlas' },
-        { label: 'Root', value: 61, unit: 'relative', context: 'PO root', source: 'Expression Atlas' },
-        { label: 'Flower', value: 48, unit: 'relative', context: 'PO flowering tissues', source: 'Expression Atlas' },
+        {
+          label: 'Leaf',
+          value: 72,
+          unit: 'relative',
+          context: 'PO leaf structures',
+          source: 'Expression Atlas',
+        },
+        {
+          label: 'Root',
+          value: 61,
+          unit: 'relative',
+          context: 'PO root',
+          source: 'Expression Atlas',
+        },
+        {
+          label: 'Flower',
+          value: 48,
+          unit: 'relative',
+          context: 'PO flowering tissues',
+          source: 'Expression Atlas',
+        },
       ],
       conditions: [
-        { label: 'Salt stress', value: 1.9, unit: 'log2 FC hint', context: 'stress-associated evidence card', source: 'Literature synthesis' },
-        { label: 'Membrane release cues', value: 1.3, unit: 'relative hint', context: 'regulated TF activation', source: 'Curated synthesis' },
+        {
+          label: 'Salt stress',
+          value: 1.9,
+          unit: 'log2 FC hint',
+          context: 'stress-associated evidence card',
+          source: 'Literature synthesis',
+        },
+        {
+          label: 'Membrane release cues',
+          value: 1.3,
+          unit: 'relative hint',
+          context: 'regulated TF activation',
+          source: 'Curated synthesis',
+        },
       ],
       source: 'Expression Atlas + curated synthesis',
       atlasLink:
@@ -135,7 +168,7 @@ const geneCatalog: Record<string, GeneSeed> = {
       {
         title: 'Stress-responsive NAC regulator',
         summary:
-          'Curated Arabidopsis resources and recent literature position NAC001/NTL10 within stress-responsive transcriptional regulation.',
+          'Кураторские ресурсы по Arabidopsis и недавняя литература помещают NAC001/NTL10 в контекст стресс-ответной транскрипционной регуляции.',
         evidenceType: 'curated',
         source: 'BAR ThaleMine',
         tags: ['NAC family', 'transcription factor', 'stress'],
@@ -144,7 +177,7 @@ const geneCatalog: Record<string, GeneSeed> = {
       {
         title: 'Membrane-associated activation logic',
         summary:
-          'GO and InterPro annotations indicate a membrane-associated transcription factor context with regulated nuclear activity.',
+          'Аннотации GO и InterPro указывают на мембраносвязанный транскрипционный фактор с регулируемой ядерной активностью.',
         evidenceType: 'computational',
         source: 'Expression Atlas bioentity info',
         tags: ['membrane', 'nucleus', 'DNA binding'],
@@ -152,23 +185,39 @@ const geneCatalog: Record<string, GeneSeed> = {
       },
     ],
     functionTerms: [
-      { id: 'GO:0006355', label: 'regulation of transcription, DNA-templated', category: 'BP', source: 'GO' },
-      { id: 'GO:0000976', label: 'transcription regulatory region sequence-specific DNA binding', category: 'MF', source: 'GO' },
+      {
+        id: 'GO:0006355',
+        label: 'regulation of transcription, DNA-templated',
+        category: 'BP',
+        source: 'GO',
+      },
+      {
+        id: 'GO:0000976',
+        label: 'transcription regulatory region sequence-specific DNA binding',
+        category: 'MF',
+        source: 'GO',
+      },
       { id: 'GO:0005634', label: 'nucleus', category: 'CC', source: 'GO' },
-      { id: 'PO:0009005', label: 'root', category: 'PO', source: 'Plant Ontology' },
+      {
+        id: 'PO:0009005',
+        label: 'root',
+        category: 'PO',
+        source: 'Plant Ontology',
+      },
     ],
     interactions: [
       {
         partnerId: 'AT2G43010',
         partnerLabel: 'PIF4',
-        relation: 'shared stress and developmental transcription context',
+        relation: 'общий стрессовый и транскрипционный контекст развития',
         source: 'curated Arabidopsis synthesis',
         confidence: 0.67,
       },
       {
         partnerId: 'AT5G10140',
         partnerLabel: 'FLC',
-        relation: 'co-mentioned in regulation-focused flowering/stress evidence',
+        relation:
+          'совместно упоминается в публикациях о регуляции цветения и стресс-ответе',
         source: 'literature synthesis',
         confidence: 0.48,
       },
@@ -194,7 +243,8 @@ const geneCatalog: Record<string, GeneSeed> = {
     literature: [
       {
         id: 'PMID:34100001',
-        title: 'NAC membrane-associated regulators coordinate Arabidopsis stress acclimation',
+        title:
+          'NAC membrane-associated regulators coordinate Arabidopsis stress acclimation',
         journal: 'Plant Physiology',
         year: 2022,
         authors: ['Lee J', 'Kumar R'],
@@ -215,19 +265,20 @@ const geneCatalog: Record<string, GeneSeed> = {
       assemblyId: 'TAIR10',
       biotype: 'protein_coding',
       description:
-        'Central integrator of temperature, light and growth signalling with broad transcriptional regulation roles.',
+        'Ключевой интегратор сигналов температуры, света и роста с широкой ролью в транскрипционной регуляции.',
       aliases: ['PIF4', 'AT2G43010'],
       location: { chromosome: '2', start: 17927859, end: 17930420, strand: -1 },
       sourceSummaries: [
         {
           source: 'ensembl',
           label: 'Ensembl Plants',
-          description: 'Canonical Arabidopsis gene with strong comparative genomics coverage.',
+          description:
+            'Канонический ген Arabidopsis с хорошим покрытием в сравнительной геномике.',
         },
       ],
       externalLinks: [
         {
-          label: 'Expression Atlas',
+          label: 'Страница в Expression Atlas',
           source: 'Expression Atlas',
           url: 'https://www.ebi.ac.uk/gxa/genes/AT2G43010?species=arabidopsis_thaliana',
         },
@@ -236,13 +287,31 @@ const geneCatalog: Record<string, GeneSeed> = {
     },
     expression: {
       summary:
-        'Высокая связь с light/temperature-responsive programs and dynamic expression under developmental transitions.',
+        'Высоко связан с программами ответа на свет и температуру, а также с динамической экспрессией при переходах развития.',
       tissues: [
-        { label: 'Hypocotyl', value: 81, unit: 'relative', context: 'seedling growth', source: 'Curated synthesis' },
-        { label: 'Leaf', value: 57, unit: 'relative', context: 'light response', source: 'Curated synthesis' },
+        {
+          label: 'Hypocotyl',
+          value: 81,
+          unit: 'relative',
+          context: 'seedling growth',
+          source: 'Curated synthesis',
+        },
+        {
+          label: 'Leaf',
+          value: 57,
+          unit: 'relative',
+          context: 'light response',
+          source: 'Curated synthesis',
+        },
       ],
       conditions: [
-        { label: 'Warm temperature', value: 2.4, unit: 'log2 FC hint', context: 'thermomorphogenesis', source: 'Literature synthesis' },
+        {
+          label: 'Warm temperature',
+          value: 2.4,
+          unit: 'log2 FC hint',
+          context: 'thermomorphogenesis',
+          source: 'Literature synthesis',
+        },
       ],
       source: 'Curated synthesis',
       lastUpdated: now,
@@ -250,7 +319,8 @@ const geneCatalog: Record<string, GeneSeed> = {
     regulation: [
       {
         title: 'Thermomorphogenesis regulator',
-        summary: 'PIF4 sits at the center of temperature and light response regulatory programs.',
+        summary:
+          'PIF4 находится в центре программ регуляции ответа на температуру и свет.',
         evidenceType: 'literature',
         source: 'Europe PMC',
         tags: ['light', 'temperature', 'growth'],
@@ -258,14 +328,24 @@ const geneCatalog: Record<string, GeneSeed> = {
       },
     ],
     functionTerms: [
-      { id: 'GO:0006355', label: 'regulation of transcription, DNA-templated', category: 'BP', source: 'GO' },
-      { id: 'GO:0003700', label: 'DNA-binding transcription factor activity', category: 'MF', source: 'GO' },
+      {
+        id: 'GO:0006355',
+        label: 'regulation of transcription, DNA-templated',
+        category: 'BP',
+        source: 'GO',
+      },
+      {
+        id: 'GO:0003700',
+        label: 'DNA-binding transcription factor activity',
+        category: 'MF',
+        source: 'GO',
+      },
     ],
     interactions: [
       {
         partnerId: 'AT1G65480',
         partnerLabel: 'FT',
-        relation: 'shared flowering transition context',
+        relation: 'общий контекст перехода к цветению',
         source: 'Curated synthesis',
         confidence: 0.61,
       },
@@ -274,7 +354,8 @@ const geneCatalog: Record<string, GeneSeed> = {
     literature: [
       {
         id: 'PMID:35620011',
-        title: 'PIF4 and environmental signal integration in Arabidopsis development',
+        title:
+          'PIF4 and environmental signal integration in Arabidopsis development',
         journal: 'Trends in Plant Science',
         year: 2023,
         authors: ['Martinez C'],
@@ -413,7 +494,9 @@ const scoreVariant = (
     MODIFIER: 0.8,
   } as const
 
-  return Number((weights[impact] + quality / 60 + Math.min(depth, 100) / 80).toFixed(2))
+  return Number(
+    (weights[impact] + quality / 60 + Math.min(depth, 100) / 80).toFixed(2),
+  )
 }
 
 const createVariantSet = (
@@ -423,7 +506,10 @@ const createVariantSet = (
 ): VariantAnnotation[] =>
   variantBlueprints.map((variant, index) => {
     const quality = Number(
-      Math.max(81, variant.quality - qualityPenalty + (index % 3) * 0.6).toFixed(1),
+      Math.max(
+        81,
+        variant.quality - qualityPenalty + (index % 3) * 0.6,
+      ).toFixed(1),
     )
     const depth = variant.depth + (index % 4) * 4
 
@@ -471,15 +557,24 @@ const createSummary = ({
   date,
   status,
   variantCount: variants.length,
-  highImpactVariants: variants.filter((variant) => variant.predictedImpact === 'HIGH').length,
-  meanDepth: Number(average(variants.map((variant) => variant.depth)).toFixed(1)),
-  meanQuality: Number(average(variants.map((variant) => variant.quality)).toFixed(1)),
+  highImpactVariants: variants.filter(
+    (variant) => variant.predictedImpact === 'HIGH',
+  ).length,
+  meanDepth: Number(
+    average(variants.map((variant) => variant.depth)).toFixed(1),
+  ),
+  meanQuality: Number(
+    average(variants.map((variant) => variant.quality)).toFixed(1),
+  ),
   fileSizeMb,
   focusGene: variants[0]?.geneSymbol ?? 'N/A',
   insightCount: variants.length + 6,
   createdAt: `${date}T00:00:00.000Z`,
   updatedAt: `${date}T00:00:00.000Z`,
-  statusDetail: status === 'processing' ? 'Mock processing run.' : null,
+  statusDetail:
+    status === 'processing'
+      ? 'Демонстрационный запуск находится в обработке.'
+      : null,
   pipelineMode: format === 'VCF' ? 'vcf_live' : 'deferred_backend',
   storedFilePath: null,
 })
@@ -497,7 +592,9 @@ export const getMockWorkbench = (
 ): WorkbenchData => {
   const species = getSpeciesDefinition(speciesId)
   const gene = geneCatalog[geneId] ?? geneCatalog.AT1G01010
-  const variants = getAllMockVariants().filter((variant) => variant.geneId === gene.profile.id)
+  const variants = getAllMockVariants().filter(
+    (variant) => variant.geneId === gene.profile.id,
+  )
 
   return {
     query: {
@@ -623,7 +720,10 @@ export const createUploadedAnalysis = (
   speciesId: SpeciesId,
   assemblyId: AssemblyId,
 ): UploadAnalysisResult => {
-  const seed = Array.from(file.name).reduce((sum, char) => sum + char.charCodeAt(0), 0)
+  const seed = Array.from(file.name).reduce(
+    (sum, char) => sum + char.charCodeAt(0),
+    0,
+  )
   const id = `PS-${speciesId === 'arabidopsis_thaliana' ? 'AT' : 'PL'}-${String(Date.now()).slice(-4)}`
   const variants = createVariantSet(id, seed % 90, (seed % 5) * 0.6)
   const focusGene = variants[seed % variants.length]?.geneId ?? 'AT1G01010'

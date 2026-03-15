@@ -38,8 +38,9 @@ const createStatus = ({
 })
 
 const sortStatuses = (statuses: SourceStatus[]) =>
-  SOURCE_CATALOG.map((item) => statuses.find((status) => status.source === item.source))
-    .filter(Boolean) as SourceStatus[]
+  SOURCE_CATALOG.map((item) =>
+    statuses.find((status) => status.source === item.source),
+  ).filter(Boolean) as SourceStatus[]
 
 export const getSourceStatuses = async (
   speciesId: SpeciesId,
@@ -81,7 +82,7 @@ export const getSourceStatuses = async (
         label: 'Ensembl Plants REST',
         status: 'online',
         coverage: 'full',
-        detail: 'Genome metadata endpoint responded successfully.',
+        detail: 'Эндпоинт метаданных генома ответил успешно.',
         lastChecked: ensembl.fetchedAt,
         observedVia: ensembl.observedVia,
       }),
@@ -93,7 +94,7 @@ export const getSourceStatuses = async (
         label: 'Ensembl Plants REST',
         status: 'offline',
         coverage: 'partial',
-        detail: 'Genome metadata endpoint did not respond in time.',
+        detail: 'Эндпоинт метаданных генома не ответил вовремя.',
         lastChecked: checkedAt,
         observedVia: 'live',
       }),
@@ -115,7 +116,7 @@ export const getSourceStatuses = async (
           label: 'BAR ThaleMine',
           status: 'online',
           coverage: 'partial',
-          detail: 'Arabidopsis-specific search endpoint returned a response.',
+          detail: 'Поисковый эндпоинт для Arabidopsis вернул ответ.',
           lastChecked: thaleMine.fetchedAt,
           observedVia: thaleMine.observedVia,
         }),
@@ -127,7 +128,7 @@ export const getSourceStatuses = async (
           label: 'BAR ThaleMine',
           status: 'degraded',
           coverage: 'link-only',
-          detail: 'Arabidopsis-specific search endpoint is currently unavailable.',
+          detail: 'Поисковый эндпоинт для Arabidopsis сейчас недоступен.',
           lastChecked: checkedAt,
           observedVia: 'live',
         }),
@@ -140,7 +141,8 @@ export const getSourceStatuses = async (
         label: 'BAR ThaleMine',
         status: 'degraded',
         coverage: 'link-only',
-        detail: 'Arabidopsis-specific connector is not queried for the selected species.',
+        detail:
+          'Коннектор для Arabidopsis не опрашивается для выбранного вида.',
         lastChecked: checkedAt,
         observedVia: 'live',
       }),
@@ -161,7 +163,7 @@ export const getSourceStatuses = async (
         label: 'Expression Atlas',
         status: 'online',
         coverage: 'partial',
-        detail: 'Bioentity information endpoint responded successfully.',
+        detail: 'Эндпоинт с bioentity-информацией ответил успешно.',
         lastChecked: atlas.fetchedAt,
         observedVia: atlas.observedVia,
       }),
@@ -173,7 +175,7 @@ export const getSourceStatuses = async (
         label: 'Expression Atlas',
         status: 'degraded',
         coverage: 'link-only',
-        detail: 'Only external atlas links are currently available.',
+        detail: 'Сейчас доступны только внешние ссылки на атлас.',
         lastChecked: checkedAt,
         observedVia: 'live',
       }),
@@ -194,7 +196,7 @@ export const getSourceStatuses = async (
         label: 'Europe PMC',
         status: 'online',
         coverage: 'full',
-        detail: 'Literature search endpoint responded successfully.',
+        detail: 'Эндпоинт поиска литературы ответил успешно.',
         lastChecked: literature.fetchedAt,
         observedVia: literature.observedVia,
       }),
@@ -206,7 +208,8 @@ export const getSourceStatuses = async (
         label: 'Europe PMC',
         status: 'degraded',
         coverage: 'link-only',
-        detail: 'Literature search endpoint is unavailable; saved links remain usable.',
+        detail:
+          'Эндпоинт поиска литературы недоступен, но сохранённые ссылки продолжают работать.',
         lastChecked: checkedAt,
         observedVia: 'live',
       }),
@@ -219,7 +222,8 @@ export const getSourceStatuses = async (
       label: 'TAIR',
       status: 'degraded',
       coverage: 'link-only',
-      detail: 'Premium connector is optional and disabled in this workspace.',
+      detail:
+        'Премиальный коннектор опционален и отключён в этом рабочем пространстве.',
       lastChecked: checkedAt,
       observedVia: 'live',
     }),

@@ -11,7 +11,10 @@ export async function GET(
   const result = getAnalysisById(resolvedParams.id)
 
   if (!result) {
-    return NextResponse.json({ message: 'Analysis not found.' }, { status: 404 })
+    return NextResponse.json(
+      { message: 'Analysis not found.' },
+      { status: 404 },
+    )
   }
 
   return NextResponse.json(result)

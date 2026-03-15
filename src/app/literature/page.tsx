@@ -29,12 +29,19 @@ export default async function LiteraturePage({
   const params = await searchParams
   const defaults = getDefaultLiteratureFilters()
   const query = params.q?.trim() ?? ''
-  const speciesId = (params.species as SpeciesId | undefined) ?? DEFAULT_SPECIES_ID
+  const speciesId =
+    (params.species as SpeciesId | undefined) ?? DEFAULT_SPECIES_ID
   const yearFrom = Number(params.yearFrom)
   const sort = normalizeLiteratureSort(params.sort)
-  const source = (params.source === 'Europe PMC'
-    ? 'Europe PMC'
-    : defaults.source) as LiteratureSource
+  const source = (
+    params.source === 'Europe PMC' ? 'Europe PMC' : defaults.source
+  ) as LiteratureSource
+  const sortLabel =
+    sort === 'citations'
+      ? 'по числу цитирований'
+      : sort === 'newest'
+        ? 'сначала новые'
+        : 'по релевантности'
   const result = query
     ? await searchLiterature({
         query,
@@ -52,12 +59,15 @@ export default async function LiteraturePage({
       <Card>
         <CardHeader>
           <Badge variant="outline" className="w-fit">
-            Literature workspace
+            Поиск литературы
           </Badge>
-          <CardTitle className="text-3xl">Поиск и ранжирование научных статей</CardTitle>
+          <CardTitle className="text-3xl">
+            Поиск и ранжирование научных статей
+          </CardTitle>
           <CardDescription>
-            Europe PMC results с серверной фильтрацией по году, сортировкой по relevance,
-            citations или newest и быстрым переходом из gene-centric workbench.
+            Статьи из Europe PMC с серверной фильтрацией по году, сортировкой по
+            релевантности, цитируемости или новизне и быстрым переходом из
+            рабочей области поиска.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -75,13 +85,15 @@ export default async function LiteraturePage({
           <section className="grid gap-4 md:grid-cols-3">
             <Card>
               <CardContent className="p-6">
-                <p className="text-sm text-slate-400">Query</p>
-                <p className="mt-2 text-2xl font-bold text-white">{result.query}</p>
+                <p className="text-sm text-slate-400">Запрос</p>
+                <p className="mt-2 text-2xl font-bold text-white">
+                  {result.query}
+                </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-6">
-                <p className="text-sm text-slate-400">Species</p>
+                <p className="text-sm text-slate-400">Вид</p>
                 <p className="mt-2 text-2xl font-bold text-white">
                   {getSpeciesDefinition(result.speciesId).label}
                 </p>
@@ -89,18 +101,20 @@ export default async function LiteraturePage({
             </Card>
             <Card>
               <CardContent className="p-6">
-                <p className="text-sm text-slate-400">Articles</p>
-                <p className="mt-2 text-2xl font-bold text-white">{result.items.length}</p>
+                <p className="text-sm text-slate-400">Статей</p>
+                <p className="mt-2 text-2xl font-bold text-white">
+                  {result.items.length}
+                </p>
               </CardContent>
             </Card>
           </section>
 
           <Card>
             <CardHeader>
-              <CardTitle>Results</CardTitle>
+              <CardTitle>Результаты</CardTitle>
               <CardDescription>
-                {result.filters.source} · from {result.filters.yearFrom} · sorted by{' '}
-                {result.filters.sort}
+                {result.filters.source} · начиная с {result.filters.yearFrom} ·{' '}
+                {sortLabel}
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 xl:grid-cols-2">
@@ -111,24 +125,30 @@ export default async function LiteraturePage({
                     href={item.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-2xl border border-genome-border bg-muted/40 p-5 transition-colors hover:border-primary/40"
+                    className="border-genome-border bg-muted/40 hover:border-primary/40 rounded-2xl border p-5 transition-colors"
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline">{item.year}</Badge>
                       <Badge variant="outline">{item.journal}</Badge>
                       {item.citedByCount ? (
-                        <Badge variant="outline">cited {item.citedByCount}</Badge>
+                        <Badge variant="outline">
+                          {item.citedByCount} цитирований
+                        </Badge>
                       ) : null}
                     </div>
-                    <p className="mt-3 text-base font-semibold text-white">{item.title}</p>
-                    <p className="mt-3 text-sm leading-7 text-slate-300">{item.snippet}</p>
-                    <p className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">
-                      {item.authors.join(', ') || 'Authors unavailable'}
+                    <p className="mt-3 text-base font-semibold text-white">
+                      {item.title}
+                    </p>
+                    <p className="mt-3 text-sm leading-7 text-slate-300">
+                      {item.snippet}
+                    </p>
+                    <p className="mt-3 text-xs tracking-[0.18em] text-slate-500 uppercase">
+                      {item.authors.join(', ') || 'Авторы не указаны'}
                     </p>
                   </a>
                 ))
               ) : (
-                <div className="col-span-full rounded-3xl border border-dashed border-genome-border bg-muted/30 px-4 py-12 text-center text-sm text-slate-500">
+                <div className="border-genome-border bg-muted/30 col-span-full rounded-3xl border border-dashed px-4 py-12 text-center text-sm text-slate-500">
                   По этому запросу статьи не найдены в выбранном временном окне.
                 </div>
               )}
@@ -138,8 +158,8 @@ export default async function LiteraturePage({
       ) : (
         <Card>
           <CardContent className="py-12 text-center text-sm text-slate-500">
-            Введите gene ID, символ или исследовательский запрос, чтобы собрать literature
-            workspace.
+            Введите идентификатор гена, символ или исследовательский запрос,
+            чтобы получить подборку научных статей.
           </CardContent>
         </Card>
       )}

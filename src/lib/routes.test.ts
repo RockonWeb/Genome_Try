@@ -12,7 +12,8 @@ import { resetDatabaseForTests } from '@/lib/server/database'
 
 const originalFetch = global.fetch
 
-const createTempDataDir = () => mkdtempSync(path.join(tmpdir(), 'phytoscope-routes-'))
+const createTempDataDir = () =>
+  mkdtempSync(path.join(tmpdir(), 'phytoscope-routes-'))
 
 const jsonResponse = (payload: unknown) =>
   new Response(JSON.stringify(payload), {
@@ -118,7 +119,10 @@ const installExternalFetchMock = () => {
           {
             type: 'go',
             values: [
-              { text: 'regulation of transcription', url: 'https://example.test/go1' },
+              {
+                text: 'regulation of transcription',
+                url: 'https://example.test/go1',
+              },
             ],
           },
         ],
@@ -208,16 +212,23 @@ test('POST /api/analysis/upload persists completed VCF runs and exposes them via
   assert.equal(uploadResponse.status, 200)
   assert.equal(uploadPayload.summary.status, 'completed')
   assert.ok(uploadPayload.summary.storedFilePath)
-  assert.ok(existsSync(path.resolve(process.cwd(), uploadPayload.summary.storedFilePath)))
+  assert.ok(
+    existsSync(
+      path.resolve(process.cwd(), uploadPayload.summary.storedFilePath),
+    ),
+  )
 
   const analysesResponse = await analysesGet()
   const analysesPayload = await analysesResponse.json()
   assert.equal(analysesPayload.length, 1)
   assert.equal(analysesPayload[0].id, uploadPayload.summary.id)
 
-  const analysisResponse = await analysisByIdGet(new Request('http://localhost'), {
-    params: Promise.resolve({ id: uploadPayload.summary.id }),
-  })
+  const analysisResponse = await analysisByIdGet(
+    new Request('http://localhost'),
+    {
+      params: Promise.resolve({ id: uploadPayload.summary.id }),
+    },
+  )
   const analysisPayload = await analysisResponse.json()
   assert.equal(analysisPayload.summary.id, uploadPayload.summary.id)
   assert.equal(analysisPayload.workbench.gene.id, 'AT1G01010')
@@ -229,7 +240,10 @@ test('POST /api/analysis/upload creates queued non-VCF runs with saved files', a
   installExternalFetchMock()
 
   const formData = new FormData()
-  formData.append('file', new File(['>seq\nATGC'], 'sample.fasta', { type: 'text/plain' }))
+  formData.append(
+    'file',
+    new File(['>seq\nATGC'], 'sample.fasta', { type: 'text/plain' }),
+  )
   formData.append('speciesId', 'arabidopsis_thaliana')
   formData.append('assemblyId', 'TAIR10')
 
@@ -245,7 +259,9 @@ test('POST /api/analysis/upload creates queued non-VCF runs with saved files', a
   assert.equal(payload.summary.status, 'queued')
   assert.equal(payload.summary.pipelineMode, 'deferred_backend')
   assert.equal(payload.workbench, null)
-  assert.ok(existsSync(path.resolve(process.cwd(), payload.summary.storedFilePath)))
+  assert.ok(
+    existsSync(path.resolve(process.cwd(), payload.summary.storedFilePath)),
+  )
 })
 
 test('GET /api/literature applies server-side filtering and sorting', async () => {
@@ -273,12 +289,16 @@ test('GET /api/source-status returns cached health snapshots after the first ref
   installExternalFetchMock()
 
   const firstResponse = await sourceStatusGet(
-    new Request('http://localhost/api/source-status?species=arabidopsis_thaliana'),
+    new Request(
+      'http://localhost/api/source-status?species=arabidopsis_thaliana',
+    ),
   )
   const firstPayload = await firstResponse.json()
 
   const secondResponse = await sourceStatusGet(
-    new Request('http://localhost/api/source-status?species=arabidopsis_thaliana'),
+    new Request(
+      'http://localhost/api/source-status?species=arabidopsis_thaliana',
+    ),
   )
   const secondPayload = await secondResponse.json()
 
@@ -287,5 +307,9 @@ test('GET /api/source-status returns cached health snapshots after the first ref
   assert.equal(firstPayload[0].observedVia, 'live')
   assert.equal(secondResponse.status, 200)
   assert.equal(secondPayload.length, 5)
-  assert.ok(secondPayload.every((status: { observedVia: string }) => status.observedVia === 'cache'))
+  assert.ok(
+    secondPayload.every(
+      (status: { observedVia: string }) => status.observedVia === 'cache',
+    ),
+  )
 })

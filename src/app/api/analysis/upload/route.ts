@@ -1,13 +1,20 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { DEFAULT_SPECIES_ID, getSpeciesDefinition, SPECIES_OPTIONS } from '@/lib/constants'
+import {
+  DEFAULT_SPECIES_ID,
+  getSpeciesDefinition,
+  SPECIES_OPTIONS,
+} from '@/lib/constants'
 import {
   annotateVcfWithEnsembl,
   supportsPlantAnnotation,
   VcfAnnotationInputError,
 } from '@/lib/ensembl'
 import { buildWorkbenchFromQuery } from '@/lib/researchAggregator'
-import { writeAnalysisArtifacts, saveUploadedFile } from '@/lib/server/analysisFiles'
+import {
+  writeAnalysisArtifacts,
+  saveUploadedFile,
+} from '@/lib/server/analysisFiles'
 import {
   createAnalysisId,
   createAnalysisResult,
@@ -27,7 +34,10 @@ const requestSchema = z.object({
 
 export const runtime = 'nodejs'
 
-const enrichAndPersistResult = async (result: Awaited<ReturnType<typeof annotateVcfWithEnsembl>>, file: File) => {
+const enrichAndPersistResult = async (
+  result: Awaited<ReturnType<typeof annotateVcfWithEnsembl>>,
+  file: File,
+) => {
   const storedFile = await saveUploadedFile(result.summary.id, file)
   const persistedResult = {
     ...result,
@@ -50,12 +60,14 @@ export async function POST(request: Request) {
     const file = formData.get('file')
     const validation = requestSchema.safeParse({
       speciesId: formData.get('speciesId') ?? DEFAULT_SPECIES_ID,
-      assemblyId: formData.get('assemblyId') ?? getSpeciesDefinition(DEFAULT_SPECIES_ID).defaultAssemblyId,
+      assemblyId:
+        formData.get('assemblyId') ??
+        getSpeciesDefinition(DEFAULT_SPECIES_ID).defaultAssemblyId,
     })
 
     if (!(file instanceof File) || !validation.success) {
       return NextResponse.json(
-        { message: 'Нужны файл, speciesId и assemblyId.' },
+        { message: 'Нужно передать файл, вид и сборку.' },
         { status: 400 },
       )
     }
@@ -63,9 +75,13 @@ export async function POST(request: Request) {
     const { speciesId, assemblyId } = validation.data
     const speciesDefinition = getSpeciesDefinition(speciesId)
 
-    if (!speciesDefinition.assemblies.some((assembly) => assembly.id === assemblyId)) {
+    if (
+      !speciesDefinition.assemblies.some(
+        (assembly) => assembly.id === assemblyId,
+      )
+    ) {
       return NextResponse.json(
-        { message: 'Assembly does not belong to selected species.' },
+        { message: 'Выбранная сборка не относится к указанному виду.' },
         { status: 400 },
       )
     }
@@ -83,7 +99,7 @@ export async function POST(request: Request) {
         variants: [],
         workbench: null,
         statusDetail:
-          'Heavy compute pipeline for BAM/FASTA/BED is not connected in this workspace yet. Run saved in queue-only mode.',
+          'Полный вычислительный конвейер для BAM, FASTA и BED в этом рабочем пространстве пока не подключён. Запуск сохранён в режиме очереди.',
       })
 
       return NextResponse.json(await enrichAndPersistResult(queuedResult, file))
@@ -94,9 +110,11 @@ export async function POST(request: Request) {
         fileName: file.name,
         fileSize: file.size,
         speciesId,
-          assemblyId: normalizedAssemblyId,
+        assemblyId: normalizedAssemblyId,
       })
-      const focusGene = result.variants.find((variant) => variant.geneId)?.geneId
+      const focusGene = result.variants.find(
+        (variant) => variant.geneId,
+      )?.geneId
       const workbench = focusGene
         ? await buildWorkbenchFromQuery(focusGene, speciesId).catch(() => null)
         : null
@@ -128,7 +146,7 @@ export async function POST(request: Request) {
         statusDetail:
           error instanceof Error
             ? error.message
-            : 'VCF analysis failed before a persistent workbench could be assembled.',
+            : 'Анализ VCF завершился с ошибкой до того, как удалось собрать рабочую область.',
       })
 
       return NextResponse.json(await enrichAndPersistResult(failedResult, file))

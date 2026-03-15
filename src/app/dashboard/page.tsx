@@ -17,6 +17,7 @@ import {
 import { Spinner } from '@/components/ui/Spinner'
 import { useAnalysisStore } from '@/hooks/useAnalysisStore'
 import { downloadVariantsCsv, printAnalysisReport } from '@/lib/exporters'
+import { getSpeciesDefinition, STATUS_LABELS } from '@/lib/constants'
 
 export default function DashboardPage() {
   return (
@@ -68,8 +69,8 @@ function DashboardPageContent() {
               Нет доступного анализа
             </p>
             <p className="mt-2 text-sm text-slate-400">
-              Запустите upload pipeline или откройте один из готовых plant
-              reports.
+              Запустите загрузку файла или откройте один из готовых
+              исследовательских запусков.
             </p>
           </div>
           <Button asChild>
@@ -89,20 +90,20 @@ function DashboardPageContent() {
           </Badge>
           <CardTitle className="text-3xl">
             {currentAnalysis.status === 'failed'
-              ? 'Этот run завершился с ошибкой'
-              : 'Этот run ещё не готов к полному research view'}
+              ? 'Этот запуск завершился с ошибкой'
+              : 'Этот запуск ещё не готов к полному исследовательскому обзору'}
           </CardTitle>
           <CardDescription>
             {currentAnalysis.status === 'failed'
-              ? 'Локальный run сохранён, но live-аннотация не смогла завершиться.'
-              : 'После подключения backend pipeline этот run сможет перейти к полному research view.'}
+              ? 'Локальный запуск сохранён, но онлайн-аннотация не смогла завершиться.'
+              : 'После подключения полной backend-обработки этот запуск сможет перейти к полному исследовательскому обзору.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="border-genome-border bg-muted/40 rounded-2xl border p-4 text-sm text-slate-300">
             Текущий статус:{' '}
             <span className="font-semibold text-white">
-              {currentAnalysis.status}
+              {STATUS_LABELS[currentAnalysis.status]}
             </span>
             {currentAnalysis.statusDetail ? (
               <p className="mt-2 text-slate-400">
@@ -112,7 +113,7 @@ function DashboardPageContent() {
           </div>
           <div className="flex gap-3">
             <Button asChild>
-              <Link href="/reports">Открыть историю отчётов</Link>
+              <Link href="/reports">Открыть архив запусков</Link>
             </Button>
             <Button asChild variant="outline">
               <Link href="/upload">Новый запуск</Link>
@@ -127,12 +128,13 @@ function DashboardPageContent() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <Badge variant="success">Sample {currentAnalysis.sampleId}</Badge>
+          <Badge variant="success">Образец {currentAnalysis.sampleId}</Badge>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-white">
-            Upload-first plant dashboard
+            Исследовательская панель анализа
           </h1>
           <p className="mt-2 text-sm text-slate-400">
-            {currentAnalysis.fileName} · {currentAnalysis.speciesId} ·{' '}
+            {currentAnalysis.fileName} ·{' '}
+            {getSpeciesDefinition(currentAnalysis.speciesId).label} ·{' '}
             {currentAnalysis.assemblyId}
           </p>
           {currentAnalysis.statusDetail ? (
@@ -163,12 +165,12 @@ function DashboardPageContent() {
               )}&species=${currentAnalysis.speciesId}`}
             >
               <LibraryBig className="mr-2 h-4 w-4" />
-              Literature
+              Литература
             </Link>
           </Button>
           <Button asChild variant="ghost">
             <Link href="/reports">
-              <ArrowLeft className="mr-2 h-4 w-4" />К отчётам
+              <ArrowLeft className="mr-2 h-4 w-4" />К архиву
             </Link>
           </Button>
         </div>
@@ -190,15 +192,15 @@ function DashboardPageContent() {
             variants: variants.length ? variants : currentWorkbench.variants,
           }}
           summary={currentAnalysis}
-          title="Upload-driven research view"
+          title="Исследовательский обзор по загрузке"
         />
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Research workbench недоступен</CardTitle>
+            <CardTitle>Рабочая область недоступна</CardTitle>
             <CardDescription>
-              Для этого run не удалось собрать full workbench. Variant export
-              остаётся доступным.
+              Для этого запуска не удалось собрать полный исследовательский
+              обзор. Экспорт вариантов остаётся доступным.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -213,11 +215,10 @@ function DashboardLoadingState() {
       <CardContent className="flex flex-col items-center gap-4 py-14 text-center">
         <Spinner className="h-8 w-8" />
         <div>
-          <p className="text-lg font-semibold text-white">
-            Подгружаю plant analysis
-          </p>
+          <p className="text-lg font-semibold text-white">Загружаю анализ</p>
           <p className="mt-2 text-sm text-slate-400">
-            Загружаю persistent analysis record и связанный research workbench.
+            Подготавливаю запись анализа и связанную исследовательскую рабочую
+            область.
           </p>
         </div>
       </CardContent>

@@ -48,7 +48,10 @@ export const researchApi = {
     return readJson<WorkbenchData>(response)
   },
 
-  async getLocus(regionLabel: string, speciesId: SpeciesId = DEFAULT_SPECIES_ID) {
+  async getLocus(
+    regionLabel: string,
+    speciesId: SpeciesId = DEFAULT_SPECIES_ID,
+  ) {
     const response = await fetch(
       `/api/locus/${encodeURIComponent(regionLabel)}?species=${encodeURIComponent(speciesId)}`,
       { cache: 'no-store' },
@@ -57,15 +60,13 @@ export const researchApi = {
     return readJson<WorkbenchData>(response)
   },
 
-  async annotateVariant(
-    payload: {
-      chromosome: string
-      position: number
-      reference: string
-      alternate: string
-      speciesId?: SpeciesId
-    },
-  ) {
+  async annotateVariant(payload: {
+    chromosome: string
+    position: number
+    reference: string
+    alternate: string
+    speciesId?: SpeciesId
+  }) {
     const response = await fetch('/api/variant/annotate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -81,7 +82,11 @@ export const researchApi = {
       { cache: 'no-store' },
     )
 
-    return readJson<{ gene: string; speciesId: SpeciesId; literature: WorkbenchData['literature'] }>(response)
+    return readJson<{
+      gene: string
+      speciesId: SpeciesId
+      literature: WorkbenchData['literature']
+    }>(response)
   },
 
   async getSourceStatus(speciesId: SpeciesId = DEFAULT_SPECIES_ID) {

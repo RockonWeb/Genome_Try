@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server'
 import { DEFAULT_SPECIES_ID, SPECIES_OPTIONS } from '@/lib/constants'
 import { getSourceStatuses } from '@/lib/sourceHealth'
 
-const isSpecies = (value: string): value is (typeof SPECIES_OPTIONS)[number]['id'] =>
+const isSpecies = (
+  value: string,
+): value is (typeof SPECIES_OPTIONS)[number]['id'] =>
   SPECIES_OPTIONS.some((species) => species.id === value)
 
 export const runtime = 'nodejs'
@@ -17,7 +19,7 @@ export async function GET(request: Request) {
     return NextResponse.json(await getSourceStatuses(speciesId, { refresh }))
   } catch {
     return NextResponse.json(
-      { message: 'Не удалось получить source status.' },
+      { message: 'Не удалось получить состояние источников.' },
       { status: 500 },
     )
   }

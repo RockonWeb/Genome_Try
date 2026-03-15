@@ -19,23 +19,32 @@ export default async function WorkbenchPage({
 }) {
   const params = await searchParams
   const query = params.q?.trim() ?? ''
-  const speciesId = (params.species as SpeciesId | undefined) ?? DEFAULT_SPECIES_ID
-  const workbench = query ? await buildWorkbenchFromQuery(query, speciesId) : null
+  const speciesId =
+    (params.species as SpeciesId | undefined) ?? DEFAULT_SPECIES_ID
+  const workbench = query
+    ? await buildWorkbenchFromQuery(query, speciesId)
+    : null
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <Badge variant="outline" className="w-fit">
-            Search-first workbench
+            Рабочая область поиска
           </Badge>
-          <CardTitle className="text-3xl">Поиск по гену, локусу или варианту</CardTitle>
+          <CardTitle className="text-3xl">
+            Поиск по гену, локусу или варианту
+          </CardTitle>
           <CardDescription>
-            Поддерживаются AGI IDs, gene symbols, genomic loci и simple variant notation.
+            Поддерживаются AGI-идентификаторы, символы генов, геномные локусы и
+            простая запись вариантов.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <WorkbenchSearchForm initialQuery={query} initialSpeciesId={speciesId} />
+          <WorkbenchSearchForm
+            initialQuery={query}
+            initialSpeciesId={speciesId}
+          />
         </CardContent>
       </Card>
 

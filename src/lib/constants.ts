@@ -10,7 +10,7 @@ export const APP_CONFIG = {
   name: 'PhytoScope',
   version: '1.0.0',
   description:
-    'Платформа для plant genomics research: варианты, функции генов, регуляция, экспрессия и литература.',
+    'Платформа для исследований в области геномики растений: варианты, функции генов, регуляция, экспрессия и литература.',
   supportEmail: 'research@phytoscope.ai',
 } as const
 
@@ -30,7 +30,8 @@ export const SUPPORTED_FORMATS: Array<{
   {
     extension: '.fasta',
     label: 'FASTA',
-    description: 'Последовательности для сборки контекста, локусов и downstream анализа.',
+    description:
+      'Последовательности для сборки контекста, локусов и downstream анализа.',
   },
   {
     extension: '.bam',
@@ -50,14 +51,15 @@ export const SPECIES_OPTIONS: SpeciesDefinition[] = [
   {
     id: 'arabidopsis_thaliana',
     label: 'Arabidopsis thaliana',
-    commonName: 'Thale cress',
+    commonName: 'резушка Таля',
     taxonId: 3702,
     defaultAssemblyId: 'TAIR10',
     assemblies: [
       {
         id: 'TAIR10',
         name: 'TAIR10',
-        description: 'Дефолтная reference assembly для Arabidopsis-first workflows.',
+        description:
+          'Базовая референсная сборка для сценариев с приоритетом Arabidopsis.',
       },
     ],
     capabilities: {
@@ -70,14 +72,15 @@ export const SPECIES_OPTIONS: SpeciesDefinition[] = [
   {
     id: 'oryza_sativa',
     label: 'Oryza sativa',
-    commonName: 'Rice',
+    commonName: 'рис',
     taxonId: 4530,
     defaultAssemblyId: 'IRGSP-1.0',
     assemblies: [
       {
         id: 'IRGSP-1.0',
         name: 'IRGSP-1.0',
-        description: 'Базовый rice reference для кросс-видового workbench.',
+        description:
+          'Базовая референсная сборка риса для межвидовых исследований.',
       },
     ],
     capabilities: {
@@ -90,14 +93,15 @@ export const SPECIES_OPTIONS: SpeciesDefinition[] = [
   {
     id: 'zea_mays',
     label: 'Zea mays',
-    commonName: 'Maize',
+    commonName: 'кукуруза',
     taxonId: 4577,
     defaultAssemblyId: 'AGPv4',
     assemblies: [
       {
         id: 'AGPv4',
         name: 'AGPv4',
-        description: 'Базовый maize reference для comparative plant genomics.',
+        description:
+          'Базовая референсная сборка кукурузы для сравнительной геномики растений.',
       },
     ],
     capabilities: {
@@ -110,14 +114,14 @@ export const SPECIES_OPTIONS: SpeciesDefinition[] = [
   {
     id: 'glycine_max',
     label: 'Glycine max',
-    commonName: 'Soybean',
+    commonName: 'соя',
     taxonId: 3847,
     defaultAssemblyId: 'Wm82.a4.v1',
     assemblies: [
       {
         id: 'Wm82.a4.v1',
         name: 'Wm82.a4.v1',
-        description: 'Soybean reference for baseline species-generic support.',
+        description: 'Референсная сборка сои для базовой межвидовой поддержки.',
       },
     ],
     capabilities: {
@@ -132,7 +136,8 @@ export const SPECIES_OPTIONS: SpeciesDefinition[] = [
 export const DEFAULT_SPECIES_ID: SpeciesId = 'arabidopsis_thaliana'
 
 export const getSpeciesDefinition = (speciesId: SpeciesId) =>
-  SPECIES_OPTIONS.find((species) => species.id === speciesId) ?? SPECIES_OPTIONS[0]
+  SPECIES_OPTIONS.find((species) => species.id === speciesId) ??
+  SPECIES_OPTIONS[0]
 
 export const VARIANT_TYPE_OPTIONS: Array<{
   id: VariantEffectType | 'all'

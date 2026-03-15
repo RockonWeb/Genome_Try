@@ -45,6 +45,36 @@ const healthClasses = {
   offline: 'bg-rose-500/10 text-rose-300',
 } as const
 
+const queryTypeLabels = {
+  gene: 'Ген',
+  symbol: 'Символ',
+  locus: 'Локус',
+  variant: 'Вариант',
+  unknown: 'Запрос',
+} as const
+
+const healthLabels = {
+  online: 'Онлайн',
+  degraded: 'Частично',
+  offline: 'Недоступен',
+} as const
+
+const observationLabels = {
+  live: 'онлайн-проверка',
+  cache: 'кэш',
+} as const
+
+const evidenceTypeLabels = {
+  curated: 'Кураторское',
+  experimental: 'Эксперимент',
+  computational: 'Вычислительное',
+  literature: 'Литература',
+  heuristic: 'Эвристика',
+} as const
+
+const formatOrthologyRelationship = (value: string) =>
+  value.replace('ortholog_', 'ортолог ').replaceAll('_', ' ')
+
 export function WorkbenchResults({
   workbench,
   summary,
@@ -70,7 +100,7 @@ export function WorkbenchResults({
         <Card className="overflow-hidden">
           <CardHeader>
             <Badge variant="outline" className="w-fit">
-              {title ?? 'Unified research view'}
+              {title ?? 'Единое исследовательское представление'}
             </Badge>
             <CardTitle className="text-3xl">
               {workbench.gene
@@ -79,13 +109,15 @@ export function WorkbenchResults({
             </CardTitle>
             <CardDescription className="max-w-3xl">
               {workbench.gene?.description ??
-                'Собранный workbench объединяет plant-aware variant context, expression, regulation и литературу.'}
+                'Собранная рабочая область объединяет контекст вариантов, экспрессию, регуляцию и литературу.'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="flex flex-wrap gap-2">
               <Badge variant="success">{workbench.species.label}</Badge>
-              <Badge variant="outline">{workbench.query.type}</Badge>
+              <Badge variant="outline">
+                {queryTypeLabels[workbench.query.type]}
+              </Badge>
               {workbench.gene ? (
                 <Badge variant="outline">{workbench.gene.assemblyId}</Badge>
               ) : null}
@@ -124,7 +156,7 @@ export function WorkbenchResults({
                   )}&species=${workbench.query.speciesId}`}
                 >
                   <LibraryBig className="mr-2 h-4 w-4" />
-                  Literature workspace
+                  Поиск литературы
                 </Link>
               </Button>
               {workbench.supportingLinks.slice(0, 4).map((link) => (
@@ -141,10 +173,10 @@ export function WorkbenchResults({
 
         <Card>
           <CardHeader>
-            <CardTitle>Source status</CardTitle>
+            <CardTitle>Состояние источников</CardTitle>
             <CardDescription>
-              Любой источник может деградировать до partial cards, но не ломает
-              страницу.
+              Любой источник может перейти в частичный режим, но не ломает
+              страницу целиком.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -163,19 +195,20 @@ export function WorkbenchResults({
                         {status.detail}
                       </p>
                       <p className="mt-2 text-[11px] tracking-[0.18em] text-slate-600 uppercase">
-                        {status.observedVia} · {status.lastChecked}
+                        {observationLabels[status.observedVia]} ·{' '}
+                        {status.lastChecked}
                       </p>
                     </div>
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-medium ${healthClasses[status.status]}`}
                     >
-                      {status.status}
+                      {healthLabels[status.status]}
                     </span>
                   </div>
                 </div>
               ))
             ) : (
-              <EmptyPanel message="Source health snapshot пока недоступен." />
+              <EmptyPanel message="Снимок состояния источников пока недоступен." />
             )}
           </CardContent>
         </Card>
@@ -184,30 +217,30 @@ export function WorkbenchResults({
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           icon={Leaf}
-          title="Variant context"
+          title="Контекст вариантов"
           value={`${workbench.variants.length}`}
-          helper="локальных или загруженных variant cards"
+          helper="локальных или загруженных карточек вариантов"
           accent="text-lime-300"
         />
         <MetricCard
           icon={Microscope}
-          title="Expression"
+          title="Экспрессия"
           value={`${workbench.expression?.tissues.length ?? 0}`}
-          helper="tissue/condition signals in view"
+          helper="сигналов по тканям и условиям"
           accent="text-sky-300"
         />
         <MetricCard
           icon={Route}
-          title="Regulation"
+          title="Регуляция"
           value={`${workbench.regulation.length}`}
-          helper="evidence cards for regulatory interpretation"
+          helper="карточек для интерпретации регуляции"
           accent="text-amber-300"
         />
         <MetricCard
           icon={BookOpen}
-          title="Literature"
+          title="Литература"
           value={`${workbench.literature.length}`}
-          helper="recent evidence links from Europe PMC"
+          helper="актуальных публикаций из Europe PMC"
           accent="text-rose-300"
         />
       </section>
@@ -215,27 +248,27 @@ export function WorkbenchResults({
       <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Expression</CardTitle>
+            <CardTitle>Экспрессия</CardTitle>
             <CardDescription>
-              Приоритетный слой для Arabidopsis-first interpretation: tissues,
-              contexts и atlas cues.
+              Один из ключевых слоёв интерпретации: ткани, условия и сигналы из
+              атласов экспрессии.
             </CardDescription>
           </CardHeader>
           <CardContent>
             {workbench.expression ? (
               <ExpressionBlock workbench={workbench} />
             ) : (
-              <EmptyPanel message="Для этого запроса нет структурированного expression payload." />
+              <EmptyPanel message="Для этого запроса нет структурированного профиля экспрессии." />
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Regulation</CardTitle>
+            <CardTitle>Регуляция</CardTitle>
             <CardDescription>
-              Сводка кураторских, computational и literature-backed regulatory
-              signals.
+              Сводка кураторских, вычислительных и литературных сигналов
+              регуляции.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -249,7 +282,9 @@ export function WorkbenchResults({
                     <p className="text-sm font-semibold text-white">
                       {item.title}
                     </p>
-                    <Badge variant="outline">{item.evidenceType}</Badge>
+                    <Badge variant="outline">
+                      {evidenceTypeLabels[item.evidenceType]}
+                    </Badge>
                     <Badge variant="outline">{item.source}</Badge>
                   </div>
                   <p className="mt-3 text-sm leading-7 text-slate-300">
@@ -261,7 +296,7 @@ export function WorkbenchResults({
                 </div>
               ))
             ) : (
-              <EmptyPanel message="Регуляторные evidence cards пока недоступны." />
+              <EmptyPanel message="Регуляторные карточки пока недоступны." />
             )}
           </CardContent>
         </Card>
@@ -270,32 +305,32 @@ export function WorkbenchResults({
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Genome context</CardTitle>
+            <CardTitle>Геномный контекст</CardTitle>
             <CardDescription>
-              Локусный контекст по текущим variant cards вместо дефолтного
-              clinical Manhattan plot.
+              Локусный контекст по текущим вариантам вместо абстрактного
+              клинического графика.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             {contextPoints.length ? (
               <GenomeContextTrack points={contextPoints} />
             ) : (
-              <EmptyPanel message="Нет локальных variant cards для genome context." />
+              <EmptyPanel message="Для геномного контекста пока нет локальных карточек вариантов." />
             )}
 
             <div className="grid gap-4 md:grid-cols-2">
               <ChartCard title="По хромосомам" data={chromosomeData} />
-              <ChartCard title="По impact" data={impactData} />
+              <ChartCard title="По уровню влияния" data={impactData} />
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Function / GO</CardTitle>
+            <CardTitle>Функции и GO</CardTitle>
             <CardDescription>
-              Ontology-backed terms, plant ontology and high-signal function
-              cues.
+              Онтологические термины, Plant Ontology и высокосигнальные
+              функциональные подсказки.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -317,7 +352,7 @@ export function WorkbenchResults({
                 </div>
               ))
             ) : (
-              <EmptyPanel message="Function terms пока не собраны." />
+              <EmptyPanel message="Функциональные термины пока не собраны." />
             )}
           </CardContent>
         </Card>
@@ -326,25 +361,25 @@ export function WorkbenchResults({
       <section className="grid gap-6 xl:grid-cols-2">
         <EntityListCard
           icon={Link2}
-          title="Interactions"
-          description="Партнёры, co-context genes и interaction-like links."
+          title="Взаимодействия"
+          description="Партнёры, контекстные гены и связи между ними."
           items={workbench.interactions.map((item) => ({
             title: item.partnerLabel,
             body: item.relation,
-            meta: `${item.source}${item.confidence ? ` · confidence ${item.confidence}` : ''}`,
+            meta: `${item.source}${item.confidence ? ` · уверенность ${item.confidence}` : ''}`,
           }))}
-          emptyMessage="Нет interaction cards для текущего запроса."
+          emptyMessage="Для текущего запроса нет карточек взаимодействий."
         />
         <EntityListCard
           icon={Orbit}
-          title="Orthology"
-          description="Быстрый comparative context по orthologues."
+          title="Ортология"
+          description="Быстрый сравнительный контекст по ортологам."
           items={workbench.orthology.map((item) => ({
             title: item.speciesLabel,
-            body: `${item.geneLabel} · ${item.relationship}`,
-            meta: `${item.source}${item.confidence ? ` · confidence ${item.confidence}` : ''}`,
+            body: `${item.geneLabel} · ${formatOrthologyRelationship(item.relationship)}`,
+            meta: `${item.source}${item.confidence ? ` · уверенность ${item.confidence}` : ''}`,
           }))}
-          emptyMessage="Orthology not available for this context."
+          emptyMessage="Для этого контекста данные по ортологии недоступны."
         />
       </section>
 
@@ -352,10 +387,10 @@ export function WorkbenchResults({
         <CardHeader>
           <div className="flex items-center justify-between gap-3">
             <div>
-              <CardTitle>Evidence / literature</CardTitle>
+              <CardTitle>Литература и доказательства</CardTitle>
               <CardDescription>
-                Curated summaries + links с быстрым переходом в отдельный
-                literature workspace.
+                Краткие резюме и ссылки с быстрым переходом в отдельный поиск
+                литературы.
               </CardDescription>
             </div>
             <Button asChild variant="outline" size="sm">
@@ -367,7 +402,7 @@ export function WorkbenchResults({
                 )}&species=${workbench.query.speciesId}`}
               >
                 <LibraryBig className="mr-2 h-4 w-4" />
-                Open workspace
+                Открыть поиск статей
               </Link>
             </Button>
           </div>
@@ -394,7 +429,9 @@ export function WorkbenchResults({
                 </p>
                 <p className="mt-3 text-xs tracking-[0.18em] text-slate-500 uppercase">
                   {item.authors.join(', ')}
-                  {item.citedByCount ? ` · cited by ${item.citedByCount}` : ''}
+                  {item.citedByCount
+                    ? ` · цитирований ${item.citedByCount}`
+                    : ''}
                 </p>
               </a>
             ))
@@ -406,22 +443,22 @@ export function WorkbenchResults({
 
       <Card>
         <CardHeader>
-          <CardTitle>Variant context</CardTitle>
+          <CardTitle>Контекст вариантов</CardTitle>
           <CardDescription>
-            Variant-first и upload-first сценарии сходятся здесь в одном
-            plant-aware table view.
+            Сценарии поиска и загрузки сходятся здесь в единой таблице
+            вариантов.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Gene</TableHead>
-                <TableHead>Position</TableHead>
-                <TableHead>Change</TableHead>
-                <TableHead>Impact</TableHead>
-                <TableHead>Consequences</TableHead>
-                <TableHead>Source</TableHead>
+                <TableHead>Ген</TableHead>
+                <TableHead>Позиция</TableHead>
+                <TableHead>Замена</TableHead>
+                <TableHead>Влияние</TableHead>
+                <TableHead>Последствия</TableHead>
+                <TableHead>Источник</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -472,7 +509,7 @@ export function WorkbenchResults({
                     colSpan={6}
                     className="py-10 text-center text-slate-500"
                   >
-                    Для текущего контекста variant cards не найдены.
+                    Для текущего контекста карточки вариантов не найдены.
                   </TableCell>
                 </TableRow>
               )}
@@ -650,7 +687,7 @@ function GenomeContextTrack({ points }: { points: GenomeContextPoint[] }) {
         viewBox={`0 0 ${width} ${height}`}
         className="h-[220px] w-full"
         role="img"
-        aria-label={`Genome context для ${points.length} вариантов на хромосомах ${chromosomes}`}
+        aria-label={`Геномный контекст для ${points.length} вариантов на хромосомах ${chromosomes}`}
       >
         {[0, 1, 2, 3].map((row) => {
           const y = padding.top + (chartHeight / 3) * row
@@ -693,7 +730,7 @@ function GenomeContextTrack({ points }: { points: GenomeContextPoint[] }) {
           fontSize="12"
           textAnchor="middle"
         >
-          Упорядоченный genome context
+          Упорядоченный геномный контекст
         </text>
       </svg>
     </div>

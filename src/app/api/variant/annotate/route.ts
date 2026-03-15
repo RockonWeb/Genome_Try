@@ -24,7 +24,10 @@ export async function POST(request: Request) {
   const parsed = bodySchema.safeParse(await request.json().catch(() => null))
 
   if (!parsed.success) {
-    return NextResponse.json({ message: 'Invalid variant payload.' }, { status: 400 })
+    return NextResponse.json(
+      { message: 'Invalid variant payload.' },
+      { status: 400 },
+    )
   }
 
   const body = parsed.data
@@ -32,11 +35,14 @@ export async function POST(request: Request) {
 
   try {
     return NextResponse.json(
-      await buildWorkbenchFromQuery(variantLabel, body.speciesId ?? DEFAULT_SPECIES_ID),
+      await buildWorkbenchFromQuery(
+        variantLabel,
+        body.speciesId ?? DEFAULT_SPECIES_ID,
+      ),
     )
   } catch {
     return NextResponse.json(
-      { message: 'Не удалось аннотировать variant query.' },
+      { message: 'Не удалось аннотировать запрос по варианту.' },
       { status: 500 },
     )
   }

@@ -46,7 +46,7 @@ export function LiteratureSearchForm({
         runSearch()
       }}
     >
-      <div className="grid gap-3 xl:grid-cols-[1fr_220px_140px_180px_150px]">
+      <div className="grid items-end gap-3 xl:grid-cols-[minmax(0,1fr)_220px_160px_200px_180px]">
         <div className="space-y-2">
           <label
             htmlFor="literature-query"
@@ -64,12 +64,13 @@ export function LiteratureSearchForm({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="AT1G01010, PIF4, seed dormancy"
-              className="border-genome-border bg-muted/40 focus:border-primary w-full rounded-2xl border py-3 pr-4 pl-11 text-sm text-white transition-colors outline-none"
+              className="border-genome-border bg-muted/40 focus:border-primary h-11 w-full rounded-2xl border pr-4 pl-11 text-sm text-white transition-colors outline-none"
               aria-describedby="literature-query-help"
             />
           </div>
           <p id="literature-query-help" className="text-xs text-slate-500">
-            Используйте gene ID, gene symbol или тематический research query.
+            Используйте идентификатор гена, символ гена или тематический
+            исследовательский запрос.
           </p>
         </div>
 
@@ -78,13 +79,13 @@ export function LiteratureSearchForm({
             htmlFor="literature-species"
             className="text-sm font-medium text-slate-300"
           >
-            Species
+            Вид
           </label>
           <select
             id="literature-species"
             value={speciesId}
             onChange={(event) => setSpeciesId(event.target.value as SpeciesId)}
-            className="border-genome-border bg-muted/40 focus:border-primary rounded-2xl border px-4 py-3 text-sm text-white transition-colors outline-none"
+            className="border-genome-border bg-muted/40 focus:border-primary h-11 w-full rounded-2xl border px-4 text-sm text-white transition-colors outline-none"
           >
             {SPECIES_OPTIONS.map((species) => (
               <option key={species.id} value={species.id}>
@@ -106,7 +107,7 @@ export function LiteratureSearchForm({
             value={yearFrom}
             onChange={(event) => setYearFrom(event.target.value)}
             inputMode="numeric"
-            className="border-genome-border bg-muted/40 focus:border-primary rounded-2xl border px-4 py-3 text-sm text-white transition-colors outline-none"
+            className="border-genome-border bg-muted/40 focus:border-primary h-11 w-full rounded-2xl border px-4 text-sm text-white transition-colors outline-none"
           />
         </div>
 
@@ -121,17 +122,16 @@ export function LiteratureSearchForm({
             id="literature-sort"
             value={sort}
             onChange={(event) => setSort(event.target.value as LiteratureSort)}
-            className="border-genome-border bg-muted/40 focus:border-primary rounded-2xl border px-4 py-3 text-sm text-white transition-colors outline-none"
+            className="border-genome-border bg-muted/40 focus:border-primary h-11 w-full rounded-2xl border px-4 text-sm text-white transition-colors outline-none"
           >
-            <option value="relevance">relevance</option>
-            <option value="citations">citations</option>
-            <option value="newest">newest</option>
+            <option value="relevance">По релевантности</option>
+            <option value="citations">По цитируемости</option>
+            <option value="newest">Сначала новые</option>
           </select>
         </div>
 
-        <div className="space-y-2">
-          <span className="text-sm font-medium text-slate-300">Действие</span>
-          <Button type="submit" className="h-[52px] w-full rounded-2xl">
+        <div className="flex items-end">
+          <Button type="submit" className="h-11 w-full rounded-2xl">
             Искать статьи
           </Button>
         </div>

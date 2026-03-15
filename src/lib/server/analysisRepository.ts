@@ -54,7 +54,10 @@ type SourceHealthRow = {
 
 type MemoryStore = {
   analyses: Map<string, AnalysisSummary>
-  payloads: Map<string, { variants: VariantAnnotation[]; workbench: WorkbenchData | null }>
+  payloads: Map<
+    string,
+    { variants: VariantAnnotation[]; workbench: WorkbenchData | null }
+  >
   sourceCache: Map<
     string,
     {
@@ -65,7 +68,10 @@ type MemoryStore = {
       expiresAt: string
     }
   >
-  sourceHealth: Map<string, Array<{ status: SourceStatus; checkedAt: string; expiresAt: string }>>
+  sourceHealth: Map<
+    string,
+    Array<{ status: SourceStatus; checkedAt: string; expiresAt: string }>
+  >
 }
 
 declare global {
@@ -91,7 +97,10 @@ const canUsePersistentStorage = () => {
     return globalThis.__phytoscopePersistentStorageAvailable
   }
 
-  if (process.env.PHYTOSCOPE_FORCE_MEMORY === '1' || process.env.VERCEL === '1') {
+  if (
+    process.env.PHYTOSCOPE_FORCE_MEMORY === '1' ||
+    process.env.VERCEL === '1'
+  ) {
     globalThis.__phytoscopePersistentStorageAvailable = false
     return false
   }
@@ -106,7 +115,7 @@ const canUsePersistentStorage = () => {
   }
 }
 
-const parseJson = <T,>(payload: string | null, fallback: T): T => {
+const parseJson = <T>(payload: string | null, fallback: T): T => {
   if (!payload) {
     return fallback
   }
@@ -225,7 +234,8 @@ export const listAnalyses = (): AnalysisSummary[] => {
   if (!canUsePersistentStorage()) {
     return Array.from(getMemoryStore().analyses.values()).sort(
       (left, right) =>
-        right.createdAt.localeCompare(left.createdAt) || right.id.localeCompare(left.id),
+        right.createdAt.localeCompare(left.createdAt) ||
+        right.id.localeCompare(left.id),
     )
   }
 
@@ -255,12 +265,14 @@ export const getAnalysisById = (id: string): UploadAnalysisResult | null => {
 
   const db = getDatabase()
   const row = db
-    .prepare(`
+    .prepare(
+      `
       SELECT analyses.*, analysis_payloads.variants_json, analysis_payloads.workbench_json
       FROM analyses
       LEFT JOIN analysis_payloads ON analysis_payloads.analysis_id = analyses.id
       WHERE analyses.id = ?
-    `)
+    `,
+    )
     .get(id) as AnalysisPayloadRow | undefined
 
   if (!row) {
@@ -276,7 +288,9 @@ export const getAnalysisById = (id: string): UploadAnalysisResult | null => {
 
 export const listStoredVariants = () => {
   if (!canUsePersistentStorage()) {
-    return Array.from(getMemoryStore().payloads.values()).flatMap((row) => row.variants)
+    return Array.from(getMemoryStore().payloads.values()).flatMap(
+      (row) => row.variants,
+    )
   }
 
   const db = getDatabase()
@@ -284,7 +298,9 @@ export const listStoredVariants = () => {
     .prepare('SELECT variants_json FROM analysis_payloads')
     .all() as Array<{ variants_json: string }>
 
-  return rows.flatMap((row) => parseJson<VariantAnnotation[]>(row.variants_json, []))
+  return rows.flatMap((row) =>
+    parseJson<VariantAnnotation[]>(row.variants_json, []),
+  )
 }
 
 export const getSourceCache = (cacheKey: string) => {
@@ -330,7 +346,8 @@ export const saveSourceCache = (input: {
   }
 
   const db = getDatabase()
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO source_cache (cache_key, source, request_url, payload_json, fetched_at, expires_at)
     VALUES (?, ?, ?, ?, ?, ?)
     ON CONFLICT(cache_key) DO UPDATE SET
@@ -339,7 +356,8 @@ export const saveSourceCache = (input: {
       payload_json = excluded.payload_json,
       fetched_at = excluded.fetched_at,
       expires_at = excluded.expires_at
-  `).run(
+  `,
+  ).run(
     input.cacheKey,
     input.source,
     input.requestUrl,
@@ -349,7 +367,7 @@ export const saveSourceCache = (input: {
   )
 }
 
-export const readSourceCachePayload = <T,>(cacheKey: string) => {
+export const readSourceCachePayload = <T>(cacheKey: string) => {
   const row = getSourceCache(cacheKey)
   if (!row) {
     return null

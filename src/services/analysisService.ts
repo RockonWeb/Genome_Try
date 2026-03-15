@@ -35,9 +35,11 @@ const normalizeText = (value: string) => value.trim().toLowerCase()
 const variantKey = (variant: VariantAnnotation) =>
   `${variant.chromosome}:${variant.position}:${variant.reference}>${variant.alternate}`
 
-const geneKey = (variant: VariantAnnotation) => variant.geneId ?? variant.geneSymbol
+const geneKey = (variant: VariantAnnotation) =>
+  variant.geneId ?? variant.geneSymbol
 
-const sortAlpha = (items: Iterable<string>) => [...items].filter(Boolean).sort((left, right) => left.localeCompare(right))
+const sortAlpha = (items: Iterable<string>) =>
+  [...items].filter(Boolean).sort((left, right) => left.localeCompare(right))
 
 export const analysisService = {
   calculateChromosomeDistribution(variants: VariantAnnotation[]): ChartData[] {
@@ -66,7 +68,8 @@ export const analysisService = {
     } as const
 
     variants.forEach((variant) => {
-      counts[variant.predictedImpact] = (counts[variant.predictedImpact] ?? 0) + 1
+      counts[variant.predictedImpact] =
+        (counts[variant.predictedImpact] ?? 0) + 1
     })
 
     return Object.entries(counts).map(([name, value]) => ({
@@ -76,7 +79,9 @@ export const analysisService = {
     }))
   },
 
-  buildGenomeContextPoints(variants: VariantAnnotation[]): GenomeContextPoint[] {
+  buildGenomeContextPoints(
+    variants: VariantAnnotation[],
+  ): GenomeContextPoint[] {
     return [...variants]
       .sort(
         (left, right) =>
@@ -194,13 +199,25 @@ export const analysisService = {
     const leftGeneKeys = new Set(leftVariants.map(geneKey).filter(Boolean))
     const rightGeneKeys = new Set(rightVariants.map(geneKey).filter(Boolean))
 
-    const sharedVariantKeys = [...leftVariantKeys].filter((key) => rightVariantKeys.has(key))
-    const leftOnlyVariantKeys = [...leftVariantKeys].filter((key) => !rightVariantKeys.has(key))
-    const rightOnlyVariantKeys = [...rightVariantKeys].filter((key) => !leftVariantKeys.has(key))
+    const sharedVariantKeys = [...leftVariantKeys].filter((key) =>
+      rightVariantKeys.has(key),
+    )
+    const leftOnlyVariantKeys = [...leftVariantKeys].filter(
+      (key) => !rightVariantKeys.has(key),
+    )
+    const rightOnlyVariantKeys = [...rightVariantKeys].filter(
+      (key) => !leftVariantKeys.has(key),
+    )
 
-    const sharedGenes = sortAlpha([...leftGeneKeys].filter((key) => rightGeneKeys.has(key)))
-    const leftOnlyGenes = sortAlpha([...leftGeneKeys].filter((key) => !rightGeneKeys.has(key)))
-    const rightOnlyGenes = sortAlpha([...rightGeneKeys].filter((key) => !leftGeneKeys.has(key)))
+    const sharedGenes = sortAlpha(
+      [...leftGeneKeys].filter((key) => rightGeneKeys.has(key)),
+    )
+    const leftOnlyGenes = sortAlpha(
+      [...leftGeneKeys].filter((key) => !rightGeneKeys.has(key)),
+    )
+    const rightOnlyGenes = sortAlpha(
+      [...rightGeneKeys].filter((key) => !leftGeneKeys.has(key)),
+    )
 
     return {
       sharedVariantCount: sharedVariantKeys.length,
@@ -210,9 +227,14 @@ export const analysisService = {
       leftOnlyGeneCount: leftOnlyGenes.length,
       rightOnlyGeneCount: rightOnlyGenes.length,
       variantCountDelta: leftSummary.variantCount - rightSummary.variantCount,
-      highImpactDelta: leftSummary.highImpactVariants - rightSummary.highImpactVariants,
-      meanDepthDelta: Number((leftSummary.meanDepth - rightSummary.meanDepth).toFixed(1)),
-      meanQualityDelta: Number((leftSummary.meanQuality - rightSummary.meanQuality).toFixed(1)),
+      highImpactDelta:
+        leftSummary.highImpactVariants - rightSummary.highImpactVariants,
+      meanDepthDelta: Number(
+        (leftSummary.meanDepth - rightSummary.meanDepth).toFixed(1),
+      ),
+      meanQualityDelta: Number(
+        (leftSummary.meanQuality - rightSummary.meanQuality).toFixed(1),
+      ),
       sharedGenes,
       leftOnlyGenes,
       rightOnlyGenes,

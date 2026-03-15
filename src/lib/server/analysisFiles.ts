@@ -11,7 +11,10 @@ const getFileExtension = (fileName: string) => {
 export const saveUploadedFile = async (analysisId: string, file: File) => {
   const paths = getPhytoStoragePaths()
   const uploadDirectory = path.join(paths.uploadsDir, analysisId)
-  const storedAbsolutePath = path.join(uploadDirectory, `original${getFileExtension(file.name)}`)
+  const storedAbsolutePath = path.join(
+    uploadDirectory,
+    `original${getFileExtension(file.name)}`,
+  )
 
   try {
     await mkdir(uploadDirectory, { recursive: true })

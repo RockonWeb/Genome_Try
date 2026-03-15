@@ -16,11 +16,11 @@ import { cn } from '@/lib/utils'
 
 const navItems = [
   { href: '/', icon: Home, label: 'Главная' },
-  { href: '/workbench', icon: ScanSearch, label: 'Workbench' },
-  { href: '/upload', icon: Upload, label: 'Upload' },
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/reports', icon: FileText, label: 'Reports' },
-  { href: '/literature', icon: LibraryBig, label: 'Literature' },
+  { href: '/workbench', icon: ScanSearch, label: 'Поиск' },
+  { href: '/upload', icon: Upload, label: 'Загрузка' },
+  { href: '/dashboard', icon: LayoutDashboard, label: 'Анализ' },
+  { href: '/reports', icon: FileText, label: 'Запуски' },
+  { href: '/literature', icon: LibraryBig, label: 'Статьи' },
 ]
 
 const isActivePath = (pathname: string, href: string) =>
@@ -40,8 +40,8 @@ export const Sidebar = () => {
             <p className="text-lg font-semibold tracking-tight text-white">
               {APP_CONFIG.name}
             </p>
-            <p className="text-xs text-slate-500">
-              Plant genomics research cockpit
+            <p className="text-xs text-slate-400">
+              Исследовательская среда по геномике растений
             </p>
           </div>
         </div>
@@ -79,25 +79,35 @@ export const Sidebar = () => {
 
         <div className="border-genome-border bg-genome-card/70 mt-auto space-y-4 rounded-2xl border p-4">
           <div>
-            <p className="text-sm font-semibold text-white">Source strategy</p>
-            <p className="mt-1 text-sm leading-relaxed text-slate-400">
-              Open sources are primary. TAIR remains optional, while partial
-              source failure degrades to link cards instead of breaking the
-              page.
+            <p className="text-sm font-semibold text-white">
+              Стратегия источников
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-slate-300">
+              Основой служат открытые базы данных. Если отдельный источник
+              временно недоступен, интерфейс переключается на резервный режим, а
+              не ломает страницу целиком.
             </p>
           </div>
           <div className="border-genome-border bg-muted/40 rounded-xl border px-3 py-2.5">
-            <p className="text-xs tracking-[0.18em] text-slate-500 uppercase">
+            <p className="text-xs tracking-[0.18em] text-slate-400 uppercase">
               Локальная сессия
             </p>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
+            <p className="mt-2 text-sm leading-6 text-slate-300">
               Авторизация не используется, поэтому завершать сессию здесь не
               требуется.
             </p>
           </div>
+          <div className="border-genome-border bg-muted/20 rounded-xl border px-3 py-2.5">
+            <p className="text-xs tracking-[0.18em] text-slate-400 uppercase">
+              Версия
+            </p>
+            <p className="mt-2 text-sm font-medium text-slate-200">
+              {APP_CONFIG.version}
+            </p>
+          </div>
           <a
             href={`mailto:${APP_CONFIG.supportEmail}`}
-            className="border-genome-border flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-sm text-slate-400 transition-colors hover:text-white"
+            className="border-genome-border flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-sm text-slate-300 transition-colors hover:text-white"
           >
             <LogOut size={16} aria-hidden="true" />
             Связаться с поддержкой
@@ -118,7 +128,7 @@ export const Sidebar = () => {
               href={item.href}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition-colors',
+                'flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-2 text-xs leading-tight font-medium transition-colors',
                 active ? 'text-primary' : 'text-slate-400',
               )}
             >

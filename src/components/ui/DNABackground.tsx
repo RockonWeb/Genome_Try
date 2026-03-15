@@ -21,7 +21,11 @@ const helixPoints = Array.from({ length: 20 }, (_, index) => {
 export function DNABackground() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-20">
-      <svg className="h-full w-full" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+      <svg
+        className="h-full w-full"
+        viewBox="0 0 800 600"
+        xmlns="http://www.w3.org/2000/svg"
+      >
         <motion.g
           animate={{ y: [0, -20, 0] }}
           transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}

@@ -15,14 +15,19 @@ test.afterEach(() => {
 })
 
 test('buildWorkbenchFromQuery returns empty degraded workbench instead of mock fallback on source failure', async () => {
-  process.env.PHYTOSCOPE_DATA_DIR = mkdtempSync(path.join(tmpdir(), 'phytoscope-aggregator-'))
+  process.env.PHYTOSCOPE_DATA_DIR = mkdtempSync(
+    path.join(tmpdir(), 'phytoscope-aggregator-'),
+  )
   resetDatabaseForTests()
 
   global.fetch = (async () => {
     throw new Error('network unavailable')
   }) as typeof fetch
 
-  const workbench = await buildWorkbenchFromQuery('AT1G01010', 'arabidopsis_thaliana')
+  const workbench = await buildWorkbenchFromQuery(
+    'AT1G01010',
+    'arabidopsis_thaliana',
+  )
 
   assert.equal(workbench.query.normalized, 'AT1G01010')
   assert.equal(workbench.gene, null)

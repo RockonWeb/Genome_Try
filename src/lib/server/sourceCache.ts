@@ -1,5 +1,8 @@
 import type { SourceObservation } from '@/types/genome'
-import { readSourceCachePayload, saveSourceCache } from '@/lib/server/analysisRepository'
+import {
+  readSourceCachePayload,
+  saveSourceCache,
+} from '@/lib/server/analysisRepository'
 
 type CachedPayload<T> = {
   payload: T
@@ -18,7 +21,7 @@ const nowIso = () => new Date().toISOString()
 
 const buildCacheKey = (source: string, url: string) => `${source}:${url}`
 
-export const fetchCachedJson = async <T,>({
+export const fetchCachedJson = async <T>({
   source,
   url,
   ttlMs,

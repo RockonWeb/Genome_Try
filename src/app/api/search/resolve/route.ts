@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server'
 import { DEFAULT_SPECIES_ID, SPECIES_OPTIONS } from '@/lib/constants'
-import { buildWorkbenchFromQuery, resolveSearch } from '@/lib/researchAggregator'
+import {
+  buildWorkbenchFromQuery,
+  resolveSearch,
+} from '@/lib/researchAggregator'
 
-const isSpecies = (value: string): value is (typeof SPECIES_OPTIONS)[number]['id'] =>
+const isSpecies = (
+  value: string,
+): value is (typeof SPECIES_OPTIONS)[number]['id'] =>
   SPECIES_OPTIONS.some((species) => species.id === value)
 
 export const runtime = 'nodejs'
@@ -14,7 +19,10 @@ export async function GET(request: Request) {
   const hydrate = searchParams.get('hydrate') === '1'
 
   if (!query) {
-    return NextResponse.json({ message: 'Query parameter q is required.' }, { status: 400 })
+    return NextResponse.json(
+      { message: 'Необходимо передать параметр q.' },
+      { status: 400 },
+    )
   }
 
   const speciesId = isSpecies(species) ? species : DEFAULT_SPECIES_ID

@@ -70,7 +70,11 @@ export const downloadVariantsCsv = (
   )
 
   const filename = `${summary.sampleId.toLowerCase()}-plant-variants.csv`
-  downloadBlob(filename, [header.join(','), ...rows].join('\n'), 'text/csv;charset=utf-8')
+  downloadBlob(
+    filename,
+    [header.join(','), ...rows].join('\n'),
+    'text/csv;charset=utf-8',
+  )
 }
 
 export const printAnalysisReport = (
@@ -81,7 +85,11 @@ export const printAnalysisReport = (
     return
   }
 
-  const reportWindow = window.open('', '_blank', 'noopener,noreferrer,width=1200,height=900')
+  const reportWindow = window.open(
+    '',
+    '_blank',
+    'noopener,noreferrer,width=1200,height=900',
+  )
 
   if (!reportWindow) {
     return

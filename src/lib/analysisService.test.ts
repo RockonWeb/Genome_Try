@@ -3,7 +3,9 @@ import test from 'node:test'
 import { analysisService } from '@/services/analysisService'
 import type { AnalysisSummary, VariantAnnotation } from '@/types/genome'
 
-const createReport = (overrides: Partial<AnalysisSummary>): AnalysisSummary => ({
+const createReport = (
+  overrides: Partial<AnalysisSummary>,
+): AnalysisSummary => ({
   id: 'PS-AT-0001',
   sampleId: 'PS-AT-0001',
   fileName: 'sample.vcf',
@@ -55,7 +57,12 @@ const createVariant = (
 
 test('filterReports applies search, species, status, and format filters', () => {
   const reports = [
-    createReport({ id: 'A', sampleId: 'A', fileName: 'alpha.vcf', focusGene: 'NAC001' }),
+    createReport({
+      id: 'A',
+      sampleId: 'A',
+      fileName: 'alpha.vcf',
+      focusGene: 'NAC001',
+    }),
     createReport({
       id: 'B',
       sampleId: 'B',

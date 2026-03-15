@@ -51,7 +51,7 @@ export const Tooltip = ({
             exit={{ opacity: 0, scale: 0.96 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
             className={cn(
-              'pointer-events-none absolute z-[60] rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs font-medium text-white shadow-2xl shadow-slate-950/30 whitespace-nowrap',
+              'pointer-events-none absolute z-[60] rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white shadow-2xl shadow-slate-950/30',
               positionClasses[position],
               className,
             )}

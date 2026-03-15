@@ -78,7 +78,11 @@ interface ParsedVcfRecord {
 export class VcfAnnotationInputError extends Error {}
 
 const normalizeChromosome = (value: string) =>
-  value.replace(/^chr/i, '').replace(/^Mt$/i, 'M').replace(/^Pt$/i, 'C').toUpperCase()
+  value
+    .replace(/^chr/i, '')
+    .replace(/^Mt$/i, 'M')
+    .replace(/^Pt$/i, 'C')
+    .toUpperCase()
 
 const isLiteralAllele = (value: string) => /^[ACGTN]+$/i.test(value)
 
@@ -140,8 +144,18 @@ export const parseVcfRecords = (content: string): ParsedVcfRecord[] => {
       continue
     }
 
-    const [chromosome, position, id, reference, alternate, quality, , info, format = '', sample = ''] =
-      line.split('\t')
+    const [
+      chromosome,
+      position,
+      id,
+      reference,
+      alternate,
+      quality,
+      ,
+      info,
+      format = '',
+      sample = '',
+    ] = line.split('\t')
 
     if (!chromosome || !position || !reference || !alternate) {
       continue
@@ -162,7 +176,11 @@ export const parseVcfRecords = (content: string): ParsedVcfRecord[] => {
 
     for (const allele of alternate.split(',')) {
       const normalizedAllele = allele.trim()
-      if (!normalizedAllele || !isLiteralAllele(reference) || !isLiteralAllele(normalizedAllele)) {
+      if (
+        !normalizedAllele ||
+        !isLiteralAllele(reference) ||
+        !isLiteralAllele(normalizedAllele)
+      ) {
         continue
       }
 
@@ -184,7 +202,10 @@ export const parseVcfRecords = (content: string): ParsedVcfRecord[] => {
   return records
 }
 
-const getVariantType = (reference: string, alternate: string): VariantEffectType => {
+const getVariantType = (
+  reference: string,
+  alternate: string,
+): VariantEffectType => {
   if (reference.length === 1 && alternate.length === 1) {
     return 'SNV'
   }
@@ -207,7 +228,9 @@ const inferImpact = (
   }
 
   if (type === 'Insertion' || type === 'Deletion') {
-    return Math.abs(reference.length - alternate.length) % 3 === 0 ? 'MODERATE' : 'HIGH'
+    return Math.abs(reference.length - alternate.length) % 3 === 0
+      ? 'MODERATE'
+      : 'HIGH'
   }
 
   return type === 'MNV' ? 'MODERATE' : 'MODERATE'
@@ -245,7 +268,9 @@ const scoreVariant = (
     MODIFIER: 0.8,
   } as const
 
-  return Number((weights[impact] + quality / 60 + Math.min(depth, 120) / 80).toFixed(2))
+  return Number(
+    (weights[impact] + quality / 60 + Math.min(depth, 120) / 80).toFixed(2),
+  )
 }
 
 const toGeneProfile = (
@@ -256,9 +281,10 @@ const toGeneProfile = (
   symbol: gene.display_name ?? gene.id,
   name: gene.description?.split(' [Source:')[0] ?? gene.display_name ?? gene.id,
   speciesId,
-  assemblyId: gene.assembly_name ?? getSpeciesDefinition(speciesId).defaultAssemblyId,
+  assemblyId:
+    gene.assembly_name ?? getSpeciesDefinition(speciesId).defaultAssemblyId,
   biotype: gene.biotype ?? 'gene',
-  description: gene.description ?? 'No Ensembl description available.',
+  description: gene.description ?? 'Описание от Ensembl недоступно.',
   aliases: [gene.display_name, gene.id].filter(Boolean) as string[],
   location: {
     chromosome: normalizeChromosome(gene.seq_region_name),
@@ -270,13 +296,14 @@ const toGeneProfile = (
     {
       source: 'ensembl',
       label: 'Ensembl Plants',
-      description: 'Reference gene model retrieved from Ensembl Plants REST.',
+      description:
+        'Референсная модель гена получена через Ensembl Plants REST.',
       url: `https://plants.ensembl.org/${getSpeciesDefinition(speciesId).label.replace(' ', '_')}/Gene/Summary?g=${gene.id}`,
     },
   ],
   externalLinks: [
     {
-      label: 'Ensembl gene page',
+      label: 'Страница гена в Ensembl',
       source: 'Ensembl Plants',
       url: `https://plants.ensembl.org/${getSpeciesDefinition(speciesId).label.replace(' ', '_')}/Gene/Summary?g=${gene.id}`,
     },
@@ -325,17 +352,17 @@ export const fetchOrthologues = async (
     `${ENSEMBL_BASE_URL}/homology/id/${speciesId}/${geneId}?type=orthologues;sequence=none`,
   )
 
-  return (response.data?.[0]?.homologies ?? [])
-    .slice(0, 6)
-    .map((item) => ({
-      speciesLabel: item.target.species.replaceAll('_', ' '),
-      geneId: item.target.id,
-      geneLabel: item.target.id,
-      relationship: item.type,
-      source: 'Ensembl Plants',
-      confidence: item.target.perc_id ? Number((item.target.perc_id / 100).toFixed(2)) : undefined,
-      url: `https://plants.ensembl.org/Multi/Search/Results?q=${item.target.id}`,
-    }))
+  return (response.data?.[0]?.homologies ?? []).slice(0, 6).map((item) => ({
+    speciesLabel: item.target.species.replaceAll('_', ' '),
+    geneId: item.target.id,
+    geneLabel: item.target.id,
+    relationship: item.type,
+    source: 'Ensembl Plants',
+    confidence: item.target.perc_id
+      ? Number((item.target.perc_id / 100).toFixed(2))
+      : undefined,
+    url: `https://plants.ensembl.org/Multi/Search/Results?q=${item.target.id}`,
+  }))
 }
 
 export const annotatePlantVariant = async ({
@@ -364,14 +391,14 @@ export const annotatePlantVariant = async ({
   const gene = items.find((item) => item.feature_type === 'gene')
   const transcript = items.find((item) => item.feature_type === 'transcript')
   const type = getVariantType(reference, alternate)
-  const featureType: VariantAnnotation['featureType'] = gene ? 'gene' : 'intergenic'
+  const featureType: VariantAnnotation['featureType'] = gene
+    ? 'gene'
+    : 'intergenic'
   const predictedImpact = inferImpact(featureType, type, reference, alternate)
   const consequenceTerms = inferConsequences(featureType, type, predictedImpact)
 
   return {
-    id:
-      id ??
-      `${normalizedChromosome}-${position}-${reference}-${alternate}`,
+    id: id ?? `${normalizedChromosome}-${position}-${reference}-${alternate}`,
     geneId: gene?.id ?? gene?.gene_id,
     geneSymbol: gene?.external_name ?? gene?.id ?? 'Intergenic',
     chromosome: normalizedChromosome,
@@ -390,8 +417,8 @@ export const annotatePlantVariant = async ({
     score: scoreVariant(predictedImpact, quality, depth),
     lastUpdated: new Date().toISOString().slice(0, 10),
     notes: gene
-      ? `Variant overlaps ${gene.external_name ?? gene.id} on ${speciesId}; impact is heuristic because plant VEP may be unavailable or slow.`
-      : 'No overlapping gene was returned by Ensembl overlap; variant is treated as intergenic context.',
+      ? `Вариант перекрывает ${gene.external_name ?? gene.id} для ${speciesId}; оценка эффекта остаётся эвристической, потому что plant VEP может быть недоступен или медленен.`
+      : 'Ensembl не вернул перекрывающийся ген, поэтому вариант трактуется как межгенный.',
   }
 }
 
@@ -442,7 +469,7 @@ export const annotateVcfWithEnsembl = async (
           score: scoreVariant('MODIFIER', record.quality, record.depth),
           lastUpdated: new Date().toISOString().slice(0, 10),
           notes:
-            'Source lookup failed; fallback variant card was created to preserve upload flow.',
+            'Не удалось получить сведения из источника, поэтому создана резервная карточка варианта, чтобы сохранить сценарий загрузки.',
         }),
       ),
     ),

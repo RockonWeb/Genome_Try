@@ -6,22 +6,29 @@ import {
   searchLiterature,
 } from '@/lib/literature'
 
-const isSpecies = (value: string): value is (typeof SPECIES_OPTIONS)[number]['id'] =>
+const isSpecies = (
+  value: string,
+): value is (typeof SPECIES_OPTIONS)[number]['id'] =>
   SPECIES_OPTIONS.some((species) => species.id === value)
 
 export const runtime = 'nodejs'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const query = searchParams.get('q')?.trim() || searchParams.get('gene')?.trim() || ''
+  const query =
+    searchParams.get('q')?.trim() || searchParams.get('gene')?.trim() || ''
   const species = searchParams.get('species') ?? DEFAULT_SPECIES_ID
   const yearFrom = Number(searchParams.get('yearFrom'))
   const sort = normalizeLiteratureSort(searchParams.get('sort'))
-  const source = searchParams.get('source') === 'Europe PMC' ? 'Europe PMC' : 'Europe PMC'
+  const source =
+    searchParams.get('source') === 'Europe PMC' ? 'Europe PMC' : 'Europe PMC'
   const refresh = searchParams.get('refresh') === '1'
 
   if (!query) {
-    return NextResponse.json({ message: 'q or gene query parameter is required.' }, { status: 400 })
+    return NextResponse.json(
+      { message: 'Необходимо передать параметр q или gene.' },
+      { status: 400 },
+    )
   }
 
   const speciesId = isSpecies(species) ? species : DEFAULT_SPECIES_ID
@@ -43,7 +50,7 @@ export async function GET(request: Request) {
     )
   } catch {
     return NextResponse.json(
-      { message: 'Не удалось загрузить literature cards.' },
+      { message: 'Не удалось загрузить карточки литературы.' },
       { status: 500 },
     )
   }

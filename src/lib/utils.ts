@@ -5,5 +5,5 @@ import { twMerge } from 'tailwind-merge'
  * Utility for merging tailwind classes with clsx
  */
 export function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs))
 }

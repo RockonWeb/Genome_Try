@@ -13,7 +13,7 @@ const plex = IBM_Plex_Sans({
 })
 
 export const metadata: Metadata = {
-  title: `${APP_CONFIG.name} — Plant Genomics Research Assistant`,
+  title: `${APP_CONFIG.name} — Платформа для геномики растений`,
   description: APP_CONFIG.description,
 }
 

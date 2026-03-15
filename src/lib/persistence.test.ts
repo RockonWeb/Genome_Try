@@ -17,7 +17,10 @@ const originalFetch = global.fetch
 
 const createTempDataDir = () => mkdtempSync(path.join(tmpdir(), 'phytoscope-'))
 
-const createVariant = (id: string, impact: VariantAnnotation['predictedImpact']): VariantAnnotation => ({
+const createVariant = (
+  id: string,
+  impact: VariantAnnotation['predictedImpact'],
+): VariantAnnotation => ({
   id,
   geneId: 'AT1G01010',
   geneSymbol: 'NAC001',
@@ -137,7 +140,10 @@ test('saveAnalysisResult persists and reloads serialized payloads', () => {
   assert.ok(saved)
   assert.equal(saved.summary.status, 'completed')
   assert.equal(saved.summary.pipelineMode, 'vcf_live')
-  assert.equal(saved.summary.storedFilePath, './.phyto/uploads/PS-AT-SERIALIZE/original.vcf')
+  assert.equal(
+    saved.summary.storedFilePath,
+    './.phyto/uploads/PS-AT-SERIALIZE/original.vcf',
+  )
   assert.equal(saved.workbench?.gene?.id, 'AT1G01010')
   assert.equal(saved.variants[0]?.predictedImpact, 'HIGH')
 })

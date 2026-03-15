@@ -1,4 +1,5 @@
 import { mkdirSync, rmSync } from 'node:fs'
+import { DatabaseSync } from 'node:sqlite'
 import { getPhytoStoragePaths } from '@/lib/server/storagePaths'
 
 type DatabaseState = {
@@ -22,7 +23,11 @@ declare global {
 
 const ensureDirectories = () => {
   const paths = getPhytoStoragePaths()
-  for (const directory of [paths.dataDir, paths.uploadsDir, paths.artifactsDir]) {
+  for (const directory of [
+    paths.dataDir,
+    paths.uploadsDir,
+    paths.artifactsDir,
+  ]) {
     mkdirSync(directory, { recursive: true })
   }
 }
@@ -90,10 +95,7 @@ export const getDatabase = () => {
   globalThis.__phytoscopeDatabaseState?.db.close()
   ensureDirectories()
 
-  const sqlite = require('node:sqlite') as {
-    DatabaseSync: new (path: string) => SqliteDatabase
-  }
-  const db = new sqlite.DatabaseSync(paths.dbPath)
+  const db = new DatabaseSync(paths.dbPath) as SqliteDatabase
   initializeSchema(db)
   globalThis.__phytoscopeDatabaseState = {
     dataDir: paths.dataDir,

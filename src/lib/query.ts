@@ -3,8 +3,7 @@ import type { ResearchQuery, SearchResolution, SpeciesId } from '@/types/genome'
 
 const agiPattern = /^AT[1-5CM]G\d{5}(?:\.\d+)?$/i
 const locusPattern = /^(?:chr)?([A-Za-z0-9]+):(\d+)-(\d+)$/i
-const variantPattern =
-  /^(?:chr)?([A-Za-z0-9]+):(\d+)\s+([ACGTN]+)>([ACGTN]+)$/i
+const variantPattern = /^(?:chr)?([A-Za-z0-9]+):(\d+)\s+([ACGTN]+)>([ACGTN]+)$/i
 
 export const parseResearchQuery = (
   raw: string,

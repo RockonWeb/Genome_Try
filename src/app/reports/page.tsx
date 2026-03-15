@@ -43,6 +43,7 @@ import {
 } from '@/components/ui/Table'
 import { useAnalysisStore } from '@/hooks/useAnalysisStore'
 import {
+  getSpeciesDefinition,
   STATUS_LABELS,
   SUPPORTED_FORMATS,
   SPECIES_OPTIONS,
@@ -166,7 +167,9 @@ export default function ReportsPage() {
 
     if (runsToCompare.length !== 2) {
       setComparisonResults([])
-      setComparisonError('Не удалось найти два selected run для сравнения.')
+      setComparisonError(
+        'Не удалось найти два выбранных запуска для сравнения.',
+      )
       return
     }
 
@@ -268,13 +271,13 @@ export default function ReportsPage() {
       <div className="space-y-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <Badge variant="outline">Reports archive</Badge>
+            <Badge variant="outline">Архив запусков</Badge>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-white">
-              История plant reports
+              История исследовательских запусков
             </h1>
             <p className="mt-2 text-sm text-slate-400">
-              Фильтруйте архив по species/status/format и сравнивайте два
-              completed run по coverage и variant overlap.
+              Фильтруйте архив по виду, статусу и формату, а затем сравнивайте
+              два завершённых запуска по покрытию и пересечению вариантов.
             </p>
           </div>
           <Button asChild>
@@ -287,19 +290,19 @@ export default function ReportsPage() {
 
         <section className="grid gap-4 md:grid-cols-3">
           <ReportMetric
-            title="Completed"
+            title="Завершено"
             value={`${completedReports.length}`}
             helper="В текущей выборке"
           />
           <ReportMetric
-            title="Queued"
+            title="В очереди"
             value={`${queuedReports.length}`}
-            helper="Ожидают backend pipeline"
+            helper="Ожидают полной обработки"
           />
           <ReportMetric
-            title="Avg depth"
+            title="Средняя глубина"
             value={`${averageDepth.toFixed(1)}`}
-            helper="По completed runs"
+            helper="По завершённым запускам"
           />
         </section>
 
@@ -307,12 +310,12 @@ export default function ReportsPage() {
           <CardHeader>
             <CardTitle>Фильтры архива</CardTitle>
             <CardDescription>
-              Поиск по file name, run ID, focus gene и статусу, плюс узкие
-              фильтры по species, status и format.
+              Поиск по имени файла, идентификатору запуска, фокусному гену и
+              статусу, плюс точные фильтры по виду, статусу и формату.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-3 xl:grid-cols-[1fr_220px_180px_180px_140px]">
+            <div className="grid items-end gap-3 xl:grid-cols-[minmax(0,1fr)_220px_180px_180px_140px]">
               <div className="space-y-2">
                 <label
                   htmlFor="reports-search"
@@ -334,8 +337,8 @@ export default function ReportsPage() {
                         search: event.target.value,
                       }))
                     }
-                    placeholder="run ID, file, focus gene, status"
-                    className="border-genome-border bg-muted/40 focus:border-primary w-full rounded-2xl border py-3 pr-4 pl-11 text-sm text-white transition-colors outline-none"
+                    placeholder="ID запуска, файл, фокусный ген, статус"
+                    className="border-genome-border bg-muted/40 focus:border-primary h-11 w-full rounded-2xl border pr-4 pl-11 text-sm text-white transition-colors outline-none"
                   />
                 </div>
               </div>
@@ -345,7 +348,7 @@ export default function ReportsPage() {
                   htmlFor="reports-species"
                   className="text-sm font-medium text-slate-300"
                 >
-                  Species
+                  Вид
                 </label>
                 <select
                   id="reports-species"
@@ -357,9 +360,9 @@ export default function ReportsPage() {
                         .value as ReportFilters['speciesId'],
                     }))
                   }
-                  className="border-genome-border bg-muted/40 focus:border-primary rounded-2xl border px-4 py-3 text-sm text-white transition-colors outline-none"
+                  className="border-genome-border bg-muted/40 focus:border-primary h-11 w-full rounded-2xl border px-4 text-sm text-white transition-colors outline-none"
                 >
-                  <option value="all">Все species</option>
+                  <option value="all">Все виды</option>
                   {SPECIES_OPTIONS.map((species) => (
                     <option key={species.id} value={species.id}>
                       {species.label}
@@ -384,7 +387,7 @@ export default function ReportsPage() {
                       status: event.target.value as ReportFilters['status'],
                     }))
                   }
-                  className="border-genome-border bg-muted/40 focus:border-primary rounded-2xl border px-4 py-3 text-sm text-white transition-colors outline-none"
+                  className="border-genome-border bg-muted/40 focus:border-primary h-11 w-full rounded-2xl border px-4 text-sm text-white transition-colors outline-none"
                 >
                   <option value="all">Все статусы</option>
                   {Object.entries(STATUS_LABELS).map(([status, label]) => (
@@ -411,7 +414,7 @@ export default function ReportsPage() {
                       format: event.target.value as ReportFilters['format'],
                     }))
                   }
-                  className="border-genome-border bg-muted/40 focus:border-primary rounded-2xl border px-4 py-3 text-sm text-white transition-colors outline-none"
+                  className="border-genome-border bg-muted/40 focus:border-primary h-11 w-full rounded-2xl border px-4 text-sm text-white transition-colors outline-none"
                 >
                   <option value="all">Все форматы</option>
                   {SUPPORTED_FORMATS.map((format) => (
@@ -422,13 +425,10 @@ export default function ReportsPage() {
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <span className="text-sm font-medium text-slate-300">
-                  Действие
-                </span>
+              <div className="flex items-end">
                 <Button
                   variant="outline"
-                  className="h-[52px] w-full"
+                  className="h-11 w-full"
                   onClick={() => setFilters(initialFilters)}
                   disabled={
                     !filters.search &&
@@ -443,8 +443,8 @@ export default function ReportsPage() {
             </div>
 
             <p className="text-sm text-slate-500" aria-live="polite">
-              Показано {filteredReports.length} из {reports.length} runs. Для
-              сравнения выберите два completed run.
+              Показано {filteredReports.length} из {reports.length} запусков.
+              Для сравнения выберите два завершённых запуска.
             </p>
           </CardContent>
         </Card>
@@ -453,24 +453,24 @@ export default function ReportsPage() {
           <CardHeader>
             <CardTitle>Список запусков</CardTitle>
             <CardDescription>
-              Открывайте dashboard, выгружайте CSV/PDF и собирайте пару runs для
-              compare mode.
+              Открывайте панель анализа, выгружайте CSV/PDF и собирайте пару
+              запусков для сравнения.
             </CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading && !reports.length ? (
               <div className="flex items-center gap-3 py-8 text-sm text-slate-400">
                 <Spinner className="h-5 w-5" />
-                Загрузка архива отчётов...
+                Проверяю локальный архив запусков...
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Run</TableHead>
+                    <TableHead>Запуск</TableHead>
                     <TableHead>Дата</TableHead>
-                    <TableHead>Species</TableHead>
-                    <TableHead>Focus gene</TableHead>
+                    <TableHead>Вид</TableHead>
+                    <TableHead>Фокусный ген</TableHead>
                     <TableHead>Статус</TableHead>
                     <TableHead className="text-right">Действия</TableHead>
                   </TableRow>
@@ -502,7 +502,8 @@ export default function ReportsPage() {
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">
-                              {report.speciesId} · {report.assemblyId}
+                              {getSpeciesDefinition(report.speciesId).label} ·{' '}
+                              {report.assemblyId}
                             </Badge>
                           </TableCell>
                           <TableCell>{report.focusGene}</TableCell>
@@ -513,11 +514,11 @@ export default function ReportsPage() {
                                 asChild
                                 variant="ghost"
                                 size="icon"
-                                title="Открыть дашборд"
+                                title="Открыть панель анализа"
                               >
                                 <Link
                                   href={`/dashboard?id=${report.id}`}
-                                  aria-label={`Открыть dashboard для ${report.fileName}`}
+                                  aria-label={`Открыть панель анализа для ${report.fileName}`}
                                 >
                                   <ExternalLink className="h-4 w-4" />
                                 </Link>
@@ -535,12 +536,12 @@ export default function ReportsPage() {
                                 aria-pressed={isSelectedForCompare}
                                 title={
                                   report.status === 'completed'
-                                    ? 'Добавить в compare mode'
-                                    : 'Сравнение доступно только для completed runs'
+                                    ? 'Добавить в режим сравнения'
+                                    : 'Сравнение доступно только для завершённых запусков'
                                 }
                               >
                                 <GitCompareArrows className="mr-2 h-4 w-4" />
-                                {isSelectedForCompare ? 'Выбран' : 'Compare'}
+                                {isSelectedForCompare ? 'Выбран' : 'Сравнить'}
                               </Button>
                               <Button
                                 variant="ghost"
@@ -583,7 +584,9 @@ export default function ReportsPage() {
                         colSpan={6}
                         className="py-10 text-center text-slate-500"
                       >
-                        Под текущие фильтры runs не найдены.
+                        {reports.length
+                          ? 'Под текущие фильтры запуски не найдены.'
+                          : 'Архив пока пуст. Запустите первый анализ, чтобы он появился здесь.'}
                       </TableCell>
                     </TableRow>
                   )}
@@ -649,18 +652,18 @@ export default function ReportsPage() {
               />
             </div>
             <p className="text-sm leading-6 text-slate-400">
-              Архив строится из локального `.phyto/` workspace. С фильтрами выше
-              этот блок помогает быстро оценить вес выбранного подмножества
-              runs.
+              Архив строится из локального каталога `.phyto/`. Вместе с
+              фильтрами выше этот блок помогает быстро оценить объём выбранного
+              подмножества запусков.
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Последний completed run</CardTitle>
+            <CardTitle>Последний завершённый запуск</CardTitle>
             <CardDescription>
-              Быстрый доступ к самому свежему completed analysis в текущей
+              Быстрый доступ к самому свежему завершённому анализу в текущей
               выборке.
             </CardDescription>
           </CardHeader>
@@ -675,16 +678,19 @@ export default function ReportsPage() {
                     </p>
                   </div>
                   <p className="mt-2 text-sm text-slate-400">
-                    {latestCompletedReport.speciesId} ·{' '}
-                    {latestCompletedReport.focusGene} ·{' '}
-                    {latestCompletedReport.highImpactVariants} high-impact
-                    variants
+                    {
+                      getSpeciesDefinition(latestCompletedReport.speciesId)
+                        .label
+                    }{' '}
+                    · {latestCompletedReport.focusGene} ·{' '}
+                    {latestCompletedReport.highImpactVariants} вариантов с
+                    высоким эффектом
                   </p>
                 </div>
                 <div className="flex gap-3">
                   <Button asChild className="flex-1">
                     <Link href={`/dashboard?id=${latestCompletedReport.id}`}>
-                      Открыть dashboard
+                      Открыть панель
                     </Link>
                   </Button>
                   <Button
@@ -699,7 +705,7 @@ export default function ReportsPage() {
               </div>
             ) : (
               <p className="text-sm text-slate-400">
-                В текущей фильтрации completed runs отсутствуют.
+                В текущей фильтрации нет завершённых запусков.
               </p>
             )}
           </CardContent>
@@ -751,10 +757,10 @@ function RunComparisonCard({
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <CardTitle>Сравнение runs</CardTitle>
+            <CardTitle>Сравнение запусков</CardTitle>
             <CardDescription>
-              Выберите два completed run, чтобы сравнить variant overlap, unique
-              genes и ключевые summary metrics.
+              Выберите два завершённых запуска, чтобы сравнить пересечение
+              вариантов, уникальные гены и ключевые метрики.
             </CardDescription>
           </div>
           {selectedReports.length ? (
@@ -767,20 +773,20 @@ function RunComparisonCard({
       </CardHeader>
       <CardContent className="space-y-4">
         {selectedReports.length === 0 ? (
-          <EmptyPanel message="Сейчас compare mode пуст. Выберите два completed run из таблицы слева." />
+          <EmptyPanel message="Сейчас режим сравнения пуст. Выберите два завершённых запуска из таблицы слева." />
         ) : null}
 
         {selectedReports.length === 1 ? (
           <div className="space-y-4">
             <SelectedRunCard report={selectedReports[0]} />
-            <EmptyPanel message="Нужен ещё один completed run, чтобы посчитать overlap и delta." />
+            <EmptyPanel message="Нужен ещё один завершённый запуск, чтобы посчитать пересечение и различия." />
           </div>
         ) : null}
 
         {isLoading ? (
           <div className="flex items-center gap-3 py-6 text-sm text-slate-400">
             <Spinner className="h-5 w-5" />
-            Подгружаю оба run для compare mode...
+            Подгружаю оба запуска для сравнения...
           </div>
         ) : null}
 
@@ -809,58 +815,58 @@ function RunComparisonCard({
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <ComparisonMetric
-                title="Shared variants"
+                title="Общие варианты"
                 value={`${comparisonSummary.sharedVariantCount}`}
-                helper="Совпадающие genomic events"
+                helper="Совпадающие геномные события"
               />
               <ComparisonMetric
-                title="Shared genes"
+                title="Общие гены"
                 value={`${comparisonSummary.sharedGeneCount}`}
                 helper="Общие затронутые гены"
               />
               <ComparisonMetric
-                title="A-only variants"
+                title="Варианты только A"
                 value={`${comparisonSummary.leftOnlyVariantCount}`}
-                helper="Уникальные для run A"
+                helper="Уникальные для запуска A"
               />
               <ComparisonMetric
-                title="B-only variants"
+                title="Варианты только B"
                 value={`${comparisonSummary.rightOnlyVariantCount}`}
-                helper="Уникальные для run B"
+                helper="Уникальные для запуска B"
               />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
               <DeltaCard
-                title="Delta metrics"
+                title="Разница по метрикам"
                 lines={[
-                  `Variant count: ${formatSignedDelta(comparisonSummary.variantCountDelta)}`,
-                  `High impact: ${formatSignedDelta(comparisonSummary.highImpactDelta)}`,
-                  `Mean depth: ${formatSignedDelta(comparisonSummary.meanDepthDelta)}`,
-                  `Mean quality: ${formatSignedDelta(comparisonSummary.meanQualityDelta)}`,
+                  `Количество вариантов: ${formatSignedDelta(comparisonSummary.variantCountDelta)}`,
+                  `Высокий эффект: ${formatSignedDelta(comparisonSummary.highImpactDelta)}`,
+                  `Средняя глубина: ${formatSignedDelta(comparisonSummary.meanDepthDelta)}`,
+                  `Среднее качество: ${formatSignedDelta(comparisonSummary.meanQualityDelta)}`,
                 ]}
               />
               <DeltaCard
-                title="Gene overlap"
+                title="Пересечение генов"
                 lines={[
-                  `Shared genes: ${comparisonSummary.sharedGeneCount}`,
-                  `A only: ${comparisonSummary.leftOnlyGeneCount}`,
-                  `B only: ${comparisonSummary.rightOnlyGeneCount}`,
+                  `Общие гены: ${comparisonSummary.sharedGeneCount}`,
+                  `Только в A: ${comparisonSummary.leftOnlyGeneCount}`,
+                  `Только в B: ${comparisonSummary.rightOnlyGeneCount}`,
                 ]}
               />
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
               <GeneBucket
-                title="Shared genes"
+                title="Общие гены"
                 genes={comparisonSummary.sharedGenes}
               />
               <GeneBucket
-                title="A-only genes"
+                title="Гены только A"
                 genes={comparisonSummary.leftOnlyGenes}
               />
               <GeneBucket
-                title="B-only genes"
+                title="Гены только B"
                 genes={comparisonSummary.rightOnlyGenes}
               />
             </div>
@@ -875,11 +881,12 @@ function SelectedRunCard({ report }: { report: AnalysisSummary }) {
   return (
     <div className="border-genome-border bg-muted/40 rounded-2xl border p-4">
       <div className="flex items-center gap-2">
-        <Badge variant="outline">Selected</Badge>
+        <Badge variant="outline">Выбран</Badge>
         <p className="text-sm font-semibold text-white">{report.fileName}</p>
       </div>
       <p className="mt-2 text-sm text-slate-400">
-        {report.id} · {report.speciesId} · {report.focusGene}
+        {report.id} · {getSpeciesDefinition(report.speciesId).label} ·{' '}
+        {report.focusGene}
       </p>
     </div>
   )
@@ -898,25 +905,25 @@ function ComparisonRunCard({
     <div className="border-genome-border bg-muted/40 rounded-2xl border p-4">
       <div className="flex items-center gap-2">
         <Badge variant={side === 'A' ? 'secondary' : 'outline'}>
-          Run {side}
+          Запуск {side}
         </Badge>
         <p className="text-sm font-semibold text-white">{report.fileName}</p>
       </div>
       <p className="mt-2 text-xs text-slate-500">{report.id}</p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <ComparisonField
-          label="Species"
-          value={`${report.speciesId} · ${report.assemblyId}`}
+          label="Вид"
+          value={`${getSpeciesDefinition(report.speciesId).label} · ${report.assemblyId}`}
         />
-        <ComparisonField label="Format" value={report.format} />
-        <ComparisonField label="Focus gene" value={report.focusGene} />
-        <ComparisonField label="Variants" value={`${report.variantCount}`} />
+        <ComparisonField label="Формат" value={report.format} />
+        <ComparisonField label="Фокусный ген" value={report.focusGene} />
+        <ComparisonField label="Варианты" value={`${report.variantCount}`} />
         <ComparisonField
-          label="High impact"
+          label="Высокий эффект"
           value={`${report.highImpactVariants}`}
         />
         <ComparisonField
-          label="Mean depth"
+          label="Средняя глубина"
           value={`${report.meanDepth.toFixed(1)}`}
         />
       </div>
@@ -984,7 +991,7 @@ function GeneBucket({ title, genes }: { title: string; genes: string[] }) {
           ) : null}
         </div>
       ) : (
-        <p className="mt-4 text-sm text-slate-500">Нет элементов.</p>
+        <p className="mt-4 text-sm text-slate-500">Список пуст.</p>
       )}
     </div>
   )

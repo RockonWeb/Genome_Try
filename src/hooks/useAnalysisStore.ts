@@ -31,7 +31,8 @@ interface AnalysisState {
 
 const sortReports = (reports: AnalysisSummary[]) =>
   [...reports].sort(
-    (left, right) => right.date.localeCompare(left.date) || right.id.localeCompare(left.id),
+    (left, right) =>
+      right.date.localeCompare(left.date) || right.id.localeCompare(left.id),
   )
 
 const uniqueReports = (reports: AnalysisSummary[]) =>
@@ -92,7 +93,9 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
       const remoteReports = await genomeApi.getReports()
 
       set((state) => {
-        const mergedReports = sortReports(uniqueReports([...state.reports, ...remoteReports]))
+        const mergedReports = sortReports(
+          uniqueReports([...state.reports, ...remoteReports]),
+        )
 
         return {
           reports: mergedReports,
@@ -102,7 +105,7 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
       })
     } catch {
       set({
-        error: 'Не удалось загрузить список plant reports.',
+        error: 'Не удалось загрузить список запусков.',
         isLoading: false,
       })
     }

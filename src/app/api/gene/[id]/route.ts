@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server'
 import { DEFAULT_SPECIES_ID, SPECIES_OPTIONS } from '@/lib/constants'
 import { buildWorkbenchFromQuery } from '@/lib/researchAggregator'
 
-const isSpecies = (value: string): value is (typeof SPECIES_OPTIONS)[number]['id'] =>
+const isSpecies = (
+  value: string,
+): value is (typeof SPECIES_OPTIONS)[number]['id'] =>
   SPECIES_OPTIONS.some((species) => species.id === value)
 
 export const runtime = 'nodejs'
@@ -22,7 +24,7 @@ export async function GET(
     )
   } catch {
     return NextResponse.json(
-      { message: 'Не удалось собрать gene workbench.' },
+      { message: 'Не удалось собрать рабочую область по гену.' },
       { status: 500 },
     )
   }

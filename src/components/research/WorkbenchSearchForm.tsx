@@ -40,7 +40,7 @@ export function WorkbenchSearchForm({
         runSearch()
       }}
     >
-      <div className="grid gap-3 lg:grid-cols-[1fr_220px_160px]">
+      <div className="grid items-end gap-3 lg:grid-cols-[minmax(0,1fr)_220px_200px]">
         <div className="space-y-2">
           <label
             htmlFor="workbench-query"
@@ -58,13 +58,13 @@ export function WorkbenchSearchForm({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="AT1G01010, NAC001, 1:3631-5899, 1:3631 G>A"
-              className="border-genome-border bg-muted/40 focus:border-primary w-full rounded-2xl border py-3 pr-4 pl-11 text-sm text-white transition-colors outline-none"
+              className="border-genome-border bg-muted/40 focus:border-primary h-11 w-full rounded-2xl border pr-4 pl-11 text-sm text-white transition-colors outline-none"
               aria-describedby="workbench-query-help"
             />
           </div>
           <p id="workbench-query-help" className="text-xs text-slate-500">
-            Можно вводить AGI ID, gene symbol, locus или simple variant
-            notation.
+            Можно вводить AGI ID, символ гена, локус или простую запись
+            варианта.
           </p>
         </div>
 
@@ -73,13 +73,13 @@ export function WorkbenchSearchForm({
             htmlFor="workbench-species"
             className="text-sm font-medium text-slate-300"
           >
-            Species
+            Вид
           </label>
           <select
             id="workbench-species"
             value={speciesId}
             onChange={(event) => setSpeciesId(event.target.value as SpeciesId)}
-            className="border-genome-border bg-muted/40 focus:border-primary rounded-2xl border px-4 py-3 text-sm text-white transition-colors outline-none"
+            className="border-genome-border bg-muted/40 focus:border-primary h-11 w-full rounded-2xl border px-4 text-sm text-white transition-colors outline-none"
           >
             {SPECIES_OPTIONS.map((species) => (
               <option key={species.id} value={species.id}>
@@ -89,10 +89,9 @@ export function WorkbenchSearchForm({
           </select>
         </div>
 
-        <div className="space-y-2">
-          <span className="text-sm font-medium text-slate-300">Действие</span>
-          <Button type="submit" className="h-[52px] w-full rounded-2xl">
-            Построить workbench
+        <div className="flex items-end">
+          <Button type="submit" className="h-11 w-full rounded-2xl">
+            Открыть рабочую область
           </Button>
         </div>
       </div>
@@ -100,7 +99,7 @@ export function WorkbenchSearchForm({
       <div className="space-y-2">
         <p className="text-sm font-medium text-slate-300">Примеры запросов</p>
         <div
-          className="flex flex-wrap gap-2"
+          className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0"
           role="group"
           aria-label="Примеры запросов"
         >
@@ -112,7 +111,7 @@ export function WorkbenchSearchForm({
                 setQuery(sample)
                 runSearch(sample)
               }}
-              className="border-genome-border hover:border-primary/40 rounded-full border px-4 py-2 text-sm text-slate-300 transition-colors hover:text-white"
+              className="border-genome-border hover:border-primary/40 shrink-0 rounded-full border px-4 py-2 text-sm whitespace-nowrap text-slate-300 transition-colors hover:text-white"
             >
               {sample}
             </button>

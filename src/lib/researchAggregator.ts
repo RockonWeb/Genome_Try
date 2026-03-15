@@ -7,10 +7,7 @@ import {
   getLocalVariantContext,
   resolveGeneIdFromSymbol,
 } from '@/lib/ensembl'
-import {
-  getDefaultLiteratureFilters,
-  searchLiterature,
-} from '@/lib/literature'
+import { getDefaultLiteratureFilters, searchLiterature } from '@/lib/literature'
 import { fetchCachedJson } from '@/lib/server/sourceCache'
 import { getSourceStatuses } from '@/lib/sourceHealth'
 import { parseResearchQuery } from '@/lib/query'
@@ -51,7 +48,7 @@ const ATLAS_TTL_MS = 24 * 60 * 60 * 1000
 
 const today = () => new Date().toISOString()
 
-const limit = <T,>(items: T[], count: number) => items.slice(0, count)
+const limit = <T>(items: T[], count: number) => items.slice(0, count)
 
 const safeSummary = (text?: string | null, fallback?: string) =>
   text?.trim() || fallback || 'Источник не вернул текстовое описание.'
@@ -68,7 +65,8 @@ const mapAtlasToFunctionTerms = (payload: AtlasBioEntityInfo): FunctionTerm[] =>
             : section.type === 'po'
               ? ('PO' as const)
               : ('Pathway' as const),
-        source: section.type === 'po' ? 'Plant Ontology' : 'GO / Expression Atlas',
+        source:
+          section.type === 'po' ? 'Plant Ontology' : 'GO / Expression Atlas',
         url: item.url,
       })),
     )
@@ -79,7 +77,9 @@ const mapAtlasToExpression = (
   speciesId: SpeciesId,
   payload: AtlasBioEntityInfo,
 ): ExpressionProfile => {
-  const poTerms = (payload.bioentityProperties ?? []).find((item) => item.type === 'po')
+  const poTerms = (payload.bioentityProperties ?? []).find(
+    (item) => item.type === 'po',
+  )
   const topTissues = limit(poTerms?.values ?? [], 4)
 
   return {
@@ -92,16 +92,16 @@ const mapAtlasToExpression = (
     tissues: topTissues.map((item, index) => ({
       label: item.text,
       value: Math.max(18, 72 - index * 11),
-      unit: 'relative relevance',
-      context: 'Expression Atlas bioentity info',
+      unit: 'относительная значимость',
+      context: 'bioentity-информация Expression Atlas',
       source: 'Expression Atlas',
       url: item.url,
     })),
     conditions: [
       {
-        label: 'Atlas coverage',
+        label: 'Покрытие атласа',
         value: topTissues.length || 1,
-        unit: 'matched PO contexts',
+        unit: 'совпавших PO-контекстов',
         context: speciesId,
         source: 'Expression Atlas',
       },
@@ -112,15 +112,20 @@ const mapAtlasToExpression = (
   }
 }
 
-const mapAtlasToRegulation = (payload: AtlasBioEntityInfo): RegulationEvidence[] => {
-  const goTerms = (payload.bioentityProperties ?? []).find((item) => item.type === 'go')
+const mapAtlasToRegulation = (
+  payload: AtlasBioEntityInfo,
+): RegulationEvidence[] => {
+  const goTerms = (payload.bioentityProperties ?? []).find(
+    (item) => item.type === 'go',
+  )
 
   return limit(goTerms?.values ?? [], 3).map((item, index) => ({
     title: item.text,
-    summary: 'Ontology-backed evidence term from Expression Atlas bioentity information.',
+    summary:
+      'Термин с онтологической поддержкой из bioentity-информации Expression Atlas.',
     evidenceType: 'computational',
     source: 'Expression Atlas',
-    tags: ['GO-backed', 'bioentity info'],
+    tags: ['GO', 'bioentity info'],
     score: Math.max(55, 82 - index * 9),
     url: item.url,
   }))
@@ -192,7 +197,7 @@ export const resolveSearch = async (
           id: query.geneId ?? query.normalized,
           label: query.geneId ?? query.normalized,
           type: 'gene',
-          reason: 'AGI-like identifier detected directly from query.',
+          reason: 'Идентификатор вида AGI распознан прямо в запросе.',
           source: 'query parser',
         },
       ],
@@ -207,13 +212,16 @@ export const resolveSearch = async (
     const candidates: SearchCandidate[] = []
 
     try {
-      const geneId = await resolveGeneIdFromSymbol(query.geneSymbol ?? query.normalized, speciesId)
+      const geneId = await resolveGeneIdFromSymbol(
+        query.geneSymbol ?? query.normalized,
+        speciesId,
+      )
       if (geneId) {
         candidates.push({
           id: geneId,
           label: `${query.geneSymbol} -> ${geneId}`,
           type: 'gene',
-          reason: 'Resolved by Ensembl xrefs.',
+          reason: 'Сопоставлено через перекрёстные ссылки Ensembl.',
           source: 'Ensembl Plants',
         })
       }
@@ -223,14 +231,16 @@ export const resolveSearch = async (
 
     if (speciesId === 'arabidopsis_thaliana') {
       try {
-        const thaleMine = await fetchThaleMineCandidate(query.geneSymbol ?? query.normalized)
+        const thaleMine = await fetchThaleMineCandidate(
+          query.geneSymbol ?? query.normalized,
+        )
         const primaryIdentifier = thaleMine?.fields?.primaryIdentifier
         if (primaryIdentifier) {
           candidates.push({
             id: primaryIdentifier,
             label: `${thaleMine?.fields?.symbol ?? primaryIdentifier} -> ${primaryIdentifier}`,
             type: 'gene',
-            reason: 'Resolved by BAR ThaleMine search.',
+            reason: 'Сопоставлено через поиск BAR ThaleMine.',
             source: 'BAR ThaleMine',
           })
         }
@@ -241,7 +251,11 @@ export const resolveSearch = async (
 
     return {
       query,
-      candidates: Array.from(new Map(candidates.map((candidate) => [candidate.id, candidate])).values()),
+      candidates: Array.from(
+        new Map(
+          candidates.map((candidate) => [candidate.id, candidate]),
+        ).values(),
+      ),
     }
   }
 
@@ -266,21 +280,22 @@ const buildGeneWorkbench = async (
     })
   }
 
-  const [orthology, atlasPayload, literatureResult, thaleMineCandidate] = await Promise.all([
-    fetchOrthologues(geneId, speciesId).catch(() => []),
-    fetchAtlasInfo(geneId).catch(() => null),
-    searchLiterature({
-      query: geneId,
-      speciesId,
-      filters: {
-        ...getDefaultLiteratureFilters(),
-        refresh: false,
-      },
-    }).catch(() => null),
-    speciesId === 'arabidopsis_thaliana'
-      ? fetchThaleMineCandidate(geneId).catch(() => null)
-      : Promise.resolve(null),
-  ])
+  const [orthology, atlasPayload, literatureResult, thaleMineCandidate] =
+    await Promise.all([
+      fetchOrthologues(geneId, speciesId).catch(() => []),
+      fetchAtlasInfo(geneId).catch(() => null),
+      searchLiterature({
+        query: geneId,
+        speciesId,
+        filters: {
+          ...getDefaultLiteratureFilters(),
+          refresh: false,
+        },
+      }).catch(() => null),
+      speciesId === 'arabidopsis_thaliana'
+        ? fetchThaleMineCandidate(geneId).catch(() => null)
+        : Promise.resolve(null),
+    ])
 
   if (thaleMineCandidate) {
     gene.sourceSummaries.unshift({
@@ -295,7 +310,9 @@ const buildGeneWorkbench = async (
     gene.aliases = Array.from(
       new Set([
         ...gene.aliases,
-        ...(thaleMineCandidate.fields?.tairAliases?.split(',').map((item) => item.trim()) ?? []),
+        ...(thaleMineCandidate.fields?.tairAliases
+          ?.split(',')
+          .map((item) => item.trim()) ?? []),
       ]),
     ).filter(Boolean)
   }
@@ -323,7 +340,9 @@ const buildGeneWorkbench = async (
       source: 'Ensembl Plants',
     },
     variants: localVariants,
-    expression: atlasPayload ? mapAtlasToExpression(geneId, speciesId, atlasPayload) : null,
+    expression: atlasPayload
+      ? mapAtlasToExpression(geneId, speciesId, atlasPayload)
+      : null,
     regulation: atlasPayload ? mapAtlasToRegulation(atlasPayload) : [],
     functionTerms: atlasPayload ? mapAtlasToFunctionTerms(atlasPayload) : [],
     interactions:
@@ -332,8 +351,9 @@ const buildGeneWorkbench = async (
             {
               partnerId: localVariants[0].geneId ?? gene.id,
               partnerLabel: localVariants[0].geneSymbol,
-              relation: 'shared uploaded variant context across persisted runs',
-              source: 'local persisted analyses',
+              relation:
+                'общий контекст загруженных вариантов в сохранённых запусках',
+              source: 'локальные сохранённые анализы',
               confidence: 0.64,
             },
           ]
@@ -343,7 +363,7 @@ const buildGeneWorkbench = async (
     supportingLinks: [
       ...gene.externalLinks,
       {
-        label: 'Europe PMC search',
+        label: 'Поиск в Europe PMC',
         source: 'Europe PMC',
         url: `https://europepmc.org/search?query=${encodeURIComponent(`${geneId} ${species.label}`)}`,
       },
@@ -374,7 +394,8 @@ const buildLocusWorkbench = async (
           normalized: regionLabel,
           type: 'locus',
           speciesId,
-          assemblyId: workbench.gene?.assemblyId ?? workbench.species.defaultAssemblyId,
+          assemblyId:
+            workbench.gene?.assemblyId ?? workbench.species.defaultAssemblyId,
           geneId: workbench.gene?.id,
           geneSymbol: workbench.gene?.symbol,
           locus: {
@@ -419,7 +440,9 @@ const buildVariantWorkbench = async (
   speciesId: SpeciesId,
 ): Promise<WorkbenchData> => {
   const sourceStatus = await getSourceStatuses(speciesId).catch(() => [])
-  const match = variantLabel.match(/^([A-Z0-9]+):(\d+)\s+([ACGTN]+)>([ACGTN]+)$/)
+  const match = variantLabel.match(
+    /^([A-Z0-9]+):(\d+)\s+([ACGTN]+)>([ACGTN]+)$/,
+  )
   if (!match) {
     return createEmptyWorkbench({
       raw: variantLabel,
@@ -446,12 +469,16 @@ const buildVariantWorkbench = async (
           normalized: variantLabel,
           type: 'variant',
           speciesId,
-          assemblyId: workbench.gene?.assemblyId ?? workbench.species.defaultAssemblyId,
+          assemblyId:
+            workbench.gene?.assemblyId ?? workbench.species.defaultAssemblyId,
           geneId: workbench.gene?.id,
           geneSymbol: workbench.gene?.symbol,
           variantLabel,
         },
-        variants: [variant, ...workbench.variants.filter((item) => item.id !== variant.id)],
+        variants: [
+          variant,
+          ...workbench.variants.filter((item) => item.id !== variant.id),
+        ],
         sourceStatus,
       }
     }

@@ -26,10 +26,12 @@ interface EuropePmcSearchResponse {
 
 const EUROPE_PMC_TTL_MS = 12 * 60 * 60 * 1000
 
-const limit = <T,>(items: T[], count: number) => items.slice(0, count)
+const limit = <T>(items: T[], count: number) => items.slice(0, count)
 
 const safeSummary = (text?: string | null, fallback?: string) =>
-  text?.trim() || fallback || 'Europe PMC returned metadata without abstract text.'
+  text?.trim() ||
+  fallback ||
+  'Europe PMC вернул метаданные без текста аннотации.'
 
 export const getDefaultLiteratureFilters = (): LiteratureFilters => ({
   yearFrom: new Date().getFullYear() - 7,
@@ -38,7 +40,9 @@ export const getDefaultLiteratureFilters = (): LiteratureFilters => ({
   refresh: false,
 })
 
-export const normalizeLiteratureSort = (value?: string | null): LiteratureSort => {
+export const normalizeLiteratureSort = (
+  value?: string | null,
+): LiteratureSort => {
   if (value === 'citations' || value === 'newest' || value === 'relevance') {
     return value
   }
@@ -51,8 +55,8 @@ export const mapEuropePmcResults = (
 ): LiteratureCard[] =>
   limit(payload.resultList?.result ?? [], 18).map((item, index) => ({
     id: item.id ?? item.pmid ?? `europepmc-${index + 1}`,
-    title: item.title ?? 'Untitled article',
-    journal: item.journalTitle ?? 'Unknown journal',
+    title: item.title ?? 'Статья без названия',
+    journal: item.journalTitle ?? 'Журнал не указан',
     year: Number(item.pubYear) || new Date().getFullYear(),
     authors: item.authorString
       ? item.authorString
@@ -74,13 +78,16 @@ const sortLiteratureCards = (items: LiteratureCard[], sort: LiteratureSort) => {
   if (sort === 'citations') {
     return [...items].sort(
       (left, right) =>
-        (right.citedByCount ?? 0) - (left.citedByCount ?? 0) || right.year - left.year,
+        (right.citedByCount ?? 0) - (left.citedByCount ?? 0) ||
+        right.year - left.year,
     )
   }
 
   if (sort === 'newest') {
     return [...items].sort(
-      (left, right) => right.year - left.year || (right.citedByCount ?? 0) - (left.citedByCount ?? 0),
+      (left, right) =>
+        right.year - left.year ||
+        (right.citedByCount ?? 0) - (left.citedByCount ?? 0),
     )
   }
 
@@ -122,7 +129,9 @@ export const searchLiterature = async ({
   })
 
   const sortedItems = sortLiteratureCards(
-    mapEuropePmcResults(payload).filter((item) => item.year >= normalizedFilters.yearFrom),
+    mapEuropePmcResults(payload).filter(
+      (item) => item.year >= normalizedFilters.yearFrom,
+    ),
     normalizedFilters.sort,
   )
 

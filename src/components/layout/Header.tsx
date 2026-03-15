@@ -3,39 +3,39 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Bell, Search } from 'lucide-react'
-import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Tooltip } from '@/components/ui/Tooltip'
 
 const pageMeta: Record<string, { title: string; subtitle: string }> = {
   '/': {
-    title: 'Plant genomics workspace',
+    title: 'Рабочее пространство PhytoScope',
     subtitle:
-      'Dual-mode platform for Arabidopsis-first research and species-generic exploration.',
+      'Единая среда для поиска по генам, локусам, вариантам и загруженным анализам растений.',
   },
   '/workbench': {
-    title: 'Research workbench',
+    title: 'Поиск по генам и вариантам',
     subtitle:
-      'Search by AGI, symbol, locus or variant and aggregate evidence in one view.',
+      'Ищите по AGI, символу, локусу или варианту и собирайте доказательства в одной рабочей области.',
   },
   '/upload': {
-    title: 'Upload pipeline',
+    title: 'Загрузка исследовательских файлов',
     subtitle:
-      'Plant-aware upload flow with focus gene, variant context and downstream evidence.',
+      'Загрузка VCF, BAM, FASTA и BED с привязкой к виду, сборке и дальнейшему исследовательскому контексту.',
   },
   '/dashboard': {
-    title: 'Upload-driven dashboard',
+    title: 'Панель текущего анализа',
     subtitle:
-      'Unified research view anchored on the current uploaded analysis.',
+      'Сводный обзор по загруженному запуску с вариантами, функциями генов и литературой.',
   },
   '/reports': {
-    title: 'Run archive',
-    subtitle: 'History of completed and processing plant genomics analyses.',
+    title: 'Архив запусков',
+    subtitle:
+      'История завершённых, ожидающих и проблемных анализов в локальном архиве.',
   },
   '/literature': {
-    title: 'Literature workspace',
+    title: 'Поиск литературы',
     subtitle:
-      'Search, filter, and rank Europe PMC evidence around the current plant genomics query.',
+      'Поиск, фильтрация и ранжирование научных статей Europe PMC по текущему запросу.',
   },
 }
 
@@ -45,14 +45,14 @@ export const Header = () => {
 
   return (
     <header className="border-genome-border bg-genome-bg/75 sticky top-0 z-40 border-b backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 md:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
           <div className="genome-gradient shadow-primary/20 flex h-10 w-10 items-center justify-center rounded-2xl shadow-lg lg:hidden">
             <div className="h-4 w-4 rotate-45 rounded-sm border-2 border-white/90" />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] tracking-[0.24em] text-slate-500 uppercase">
-              PhytoScope workspace
+            <p className="text-[11px] tracking-[0.24em] text-slate-400 uppercase">
+              Пространство PhytoScope
             </p>
             <h1 className="truncate text-sm font-semibold text-white md:text-base">
               {meta.title}
@@ -70,7 +70,7 @@ export const Header = () => {
             aria-hidden="true"
           />
           <div className="min-w-0">
-            <p className="text-[11px] tracking-[0.2em] text-slate-500 uppercase">
+            <p className="text-[11px] tracking-[0.2em] text-slate-400 uppercase">
               Контекст страницы
             </p>
             <p className="truncate text-sm text-slate-300">{meta.subtitle}</p>
@@ -78,9 +78,6 @@ export const Header = () => {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
-          <Badge variant="success" className="hidden md:inline-flex">
-            Arabidopsis-first
-          </Badge>
           <Tooltip content="Новых системных оповещений нет">
             <button
               type="button"
@@ -91,7 +88,7 @@ export const Header = () => {
             </button>
           </Tooltip>
           <Button asChild size="sm" className="hidden sm:inline-flex">
-            <Link href="/workbench">Новый поиск</Link>
+            <Link href="/workbench">Открыть поиск</Link>
           </Button>
         </div>
       </div>

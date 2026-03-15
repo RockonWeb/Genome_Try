@@ -104,15 +104,15 @@ export default function UploadPage() {
       <Card className="overflow-hidden">
         <CardHeader>
           <Badge variant="outline" className="w-fit">
-            Upload workspace
+            Загрузка данных
           </Badge>
           <CardTitle className="text-3xl">
-            Plant-aware upload pipeline
+            Загрузка исследовательских файлов
           </CardTitle>
           <CardDescription>
-            Выберите species, assembly и файл. Для `VCF` приложение строит
-            plant-specific variant cards, а затем разворачивает research context
-            вокруг focus gene.
+            Выберите вид, сборку и файл. Для `VCF` приложение строит карточки
+            вариантов, а затем раскрывает исследовательский контекст вокруг
+            фокусного гена.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -121,10 +121,10 @@ export default function UploadPage() {
               htmlFor="upload-species"
               className="space-y-2 text-sm font-medium text-slate-300"
             >
-              Species
+              Вид
               <select
                 id="upload-species"
-                className="border-genome-border bg-muted/60 focus:border-primary w-full rounded-2xl border px-4 py-3 text-sm text-white transition-colors outline-none"
+                className="border-genome-border bg-muted/60 focus:border-primary h-11 w-full rounded-2xl border px-4 text-sm text-white transition-colors outline-none"
                 value={speciesId}
                 onChange={(event) => {
                   const nextSpecies = event.target.value as SpeciesId
@@ -145,10 +145,10 @@ export default function UploadPage() {
               htmlFor="upload-assembly"
               className="space-y-2 text-sm font-medium text-slate-300"
             >
-              Assembly
+              Сборка
               <select
                 id="upload-assembly"
-                className="border-genome-border bg-muted/60 focus:border-primary w-full rounded-2xl border px-4 py-3 text-sm text-white transition-colors outline-none"
+                className="border-genome-border bg-muted/60 focus:border-primary h-11 w-full rounded-2xl border px-4 text-sm text-white transition-colors outline-none"
                 value={assemblyId}
                 onChange={(event) =>
                   setAssemblyId(event.target.value as AssemblyId)
@@ -166,33 +166,34 @@ export default function UploadPage() {
           <div className="grid gap-4 md:grid-cols-[1fr_240px]">
             <div className="border-genome-border bg-muted/40 rounded-2xl border p-4">
               <p className="text-xs tracking-[0.2em] text-slate-500 uppercase">
-                Pipeline mode
+                Режим обработки
               </p>
               <p className="mt-3 text-sm font-semibold text-white">
-                Plant research workbench
+                Исследовательский контекст растений
               </p>
               <p
                 id="upload-pipeline-help"
                 className="mt-2 text-sm leading-6 text-slate-400"
               >
-                `VCF` проходит через Ensembl overlap-driven annotation и
-                heuristic impact inference. `BAM/FASTA/BED` создают persistent
-                queued run с сохранением файла и явным статусом ожидания backend
-                pipeline.
+                `VCF` проходит через аннотацию по Ensembl и эвристическую оценку
+                эффекта. `BAM/FASTA/BED` создают локально сохранённый запуск с
+                явным статусом ожидания более тяжёлой серверной обработки.
               </p>
             </div>
 
             <div className="border-genome-border bg-muted/40 rounded-2xl border p-4">
               <p className="text-xs tracking-[0.2em] text-slate-500 uppercase">
-                Arabidopsis depth
+                Глубина покрытия
               </p>
               <p className="mt-3 text-sm font-semibold text-white">
-                {species.capabilities.arabidopsisDepth ? 'Maximum' : 'Baseline'}
+                {species.capabilities.arabidopsisDepth
+                  ? 'Максимальная'
+                  : 'Базовая'}
               </p>
               <p className="mt-2 text-sm leading-6 text-slate-400">
                 {species.capabilities.arabidopsisDepth
-                  ? 'Expression, regulation и literature view будут максимально насыщены.'
-                  : 'Интерфейс сохранится, но часть карточек будет baseline-level.'}
+                  ? 'Экспрессия, регуляция и литература будут доступны с максимальной детализацией.'
+                  : 'Интерфейс сохранится, но часть карточек будет доступна в базовом режиме.'}
               </p>
             </div>
           </div>
@@ -223,16 +224,17 @@ export default function UploadPage() {
                   <Upload size={34} aria-hidden="true" />
                 </div>
                 <h2 className="text-xl font-semibold text-white">
-                  Перетащите plant genomics файл в область загрузки
+                  Перетащите файл с геномными данными растений в область
+                  загрузки
                 </h2>
                 <p
                   id="upload-dropzone-help"
                   className="mt-3 max-w-xl text-sm leading-7 text-slate-400"
                 >
-                  Для `VCF` вы получите plant-specific consequence terms и live
-                  workbench. Для `BAM/FASTA/BED` приложение сохранит run
-                  локально и честно покажет queued state, пока тяжёлый backend
-                  не подключён.
+                  Для `VCF` вы получите последствия вариантов и
+                  исследовательскую рабочую область. Для `BAM/FASTA/BED`
+                  приложение сохранит запуск локально и честно покажет состояние
+                  очереди, пока тяжёлая серверная обработка не подключена.
                 </p>
                 <Button
                   type="button"
@@ -349,7 +351,7 @@ export default function UploadPage() {
                 className="mt-0.5 h-5 w-5 shrink-0"
                 aria-hidden="true"
               />
-              <p>Анализ завершён. Открываю plant research dashboard.</p>
+              <p>Анализ завершён. Открываю панель исследования.</p>
             </div>
           ) : null}
         </CardContent>
@@ -361,7 +363,7 @@ export default function UploadPage() {
             <CardTitle>Поддерживаемые форматы</CardTitle>
             <CardDescription>
               Все форматы валидируются в UI, но только VCF сейчас завершается
-              live-аннотацией.
+              полной онлайн-аннотацией.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -386,24 +388,24 @@ export default function UploadPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Research context after upload</CardTitle>
+            <CardTitle>Что доступно после загрузки</CardTitle>
             <CardDescription>
-              Загруженный анализ не заканчивается на variant table.
+              Загруженный анализ не заканчивается таблицей вариантов.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="border-genome-border bg-muted/40 flex items-start gap-3 rounded-2xl border p-4">
-              <Leaf className="text-primary mt-0.5 h-5 w-5" />
+              <Leaf className="text-primary mt-1 h-5 w-5 shrink-0 self-start" />
               <p className="text-sm leading-6 text-slate-400">
-                Dashboard разворачивает focus gene в expression, regulation, GO,
-                orthology и evidence cards.
+                Панель анализа раскрывает фокусный ген через экспрессию,
+                регуляцию, GO-термины, ортологию и доказательные карточки.
               </p>
             </div>
             <div className="border-genome-border bg-muted/40 flex items-start gap-3 rounded-2xl border p-4">
-              <Database className="text-secondary mt-0.5 h-5 w-5" />
+              <Database className="text-secondary mt-1 h-5 w-5 shrink-0 self-start" />
               <p className="text-sm leading-6 text-slate-400">
-                История запусков теперь переживает reload и хранится в локальном
-                workspace `.phyto/`.
+                История запусков сохраняется после перезагрузки страницы и
+                хранится в локальном рабочем каталоге `.phyto/`.
               </p>
             </div>
           </CardContent>

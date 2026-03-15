@@ -20,17 +20,29 @@ const cloneResult = (result: UploadAnalysisResult): UploadAnalysisResult => ({
         expression: result.workbench.expression
           ? {
               ...result.workbench.expression,
-              tissues: result.workbench.expression.tissues.map((item) => ({ ...item })),
-              conditions: result.workbench.expression.conditions.map((item) => ({ ...item })),
+              tissues: result.workbench.expression.tissues.map((item) => ({
+                ...item,
+              })),
+              conditions: result.workbench.expression.conditions.map(
+                (item) => ({ ...item }),
+              ),
             }
           : null,
         regulation: result.workbench.regulation.map((item) => ({ ...item })),
-        functionTerms: result.workbench.functionTerms.map((item) => ({ ...item })),
-        interactions: result.workbench.interactions.map((item) => ({ ...item })),
+        functionTerms: result.workbench.functionTerms.map((item) => ({
+          ...item,
+        })),
+        interactions: result.workbench.interactions.map((item) => ({
+          ...item,
+        })),
         orthology: result.workbench.orthology.map((item) => ({ ...item })),
         literature: result.workbench.literature.map((item) => ({ ...item })),
-        supportingLinks: result.workbench.supportingLinks.map((item) => ({ ...item })),
-        sourceStatus: result.workbench.sourceStatus.map((item) => ({ ...item })),
+        supportingLinks: result.workbench.supportingLinks.map((item) => ({
+          ...item,
+        })),
+        sourceStatus: result.workbench.sourceStatus.map((item) => ({
+          ...item,
+        })),
       }
     : null,
 })
@@ -74,7 +86,6 @@ export const genomeApi = {
   },
 
   async getReports(): Promise<AnalysisSummary[]> {
-    await delay(120)
     const response = await fetch('/api/analyses', {
       method: 'GET',
       cache: 'no-store',
@@ -88,7 +99,6 @@ export const genomeApi = {
   },
 
   async getAnalysisResult(id: string): Promise<UploadAnalysisResult | null> {
-    await delay(180)
     const response = await fetch(`/api/analyses/${encodeURIComponent(id)}`, {
       method: 'GET',
       cache: 'no-store',

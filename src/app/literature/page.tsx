@@ -13,6 +13,7 @@ import {
   normalizeLiteratureSort,
   searchLiterature,
 } from '@/lib/literature'
+import { getTranslationProviderLabel } from '@/lib/server/translation'
 import type { LiteratureSource, SpeciesId } from '@/types/genome'
 
 export default async function LiteraturePage({
@@ -24,6 +25,7 @@ export default async function LiteraturePage({
     yearFrom?: string
     sort?: string
     source?: string
+    translate?: string
   }>
 }) {
   const params = await searchParams
@@ -33,9 +35,11 @@ export default async function LiteraturePage({
     (params.species as SpeciesId | undefined) ?? DEFAULT_SPECIES_ID
   const yearFrom = Number(params.yearFrom)
   const sort = normalizeLiteratureSort(params.sort)
+  const translate = params.translate === '0' ? false : defaults.translate
   const source = (
     params.source === 'Europe PMC' ? 'Europe PMC' : defaults.source
   ) as LiteratureSource
+  const translationProvider = getTranslationProviderLabel()
   const sortLabel =
     sort === 'citations'
       ? 'по числу цитирований'
@@ -50,6 +54,7 @@ export default async function LiteraturePage({
           yearFrom: Number.isFinite(yearFrom) ? yearFrom : defaults.yearFrom,
           sort,
           source,
+          translate,
         },
       })
     : null
@@ -67,7 +72,9 @@ export default async function LiteraturePage({
           <CardDescription>
             Статьи из Europe PMC с серверной фильтрацией по году, сортировкой по
             релевантности, цитируемости или новизне и быстрым переходом из
-            рабочей области поиска.
+            рабочей области поиска. Аннотации можно автоматически переводить на
+            русский через{' '}
+            {translationProvider ?? 'настроенный серверный сервис'}.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -76,7 +83,14 @@ export default async function LiteraturePage({
             initialSpeciesId={speciesId}
             initialYearFrom={result?.filters.yearFrom ?? defaults.yearFrom}
             initialSort={result?.filters.sort ?? defaults.sort}
+            initialTranslate={result?.filters.translate ?? translate}
           />
+          {!translationProvider ? (
+            <p className="mt-4 text-xs leading-6 text-slate-500">
+              Автоперевод включится после настройки `DEEPL_API_KEY` или
+              `LIBRETRANSLATE_URL` на сервере.
+            </p>
+          ) : null}
         </CardContent>
       </Card>
 
@@ -115,6 +129,11 @@ export default async function LiteraturePage({
               <CardDescription>
                 {result.filters.source} · начиная с {result.filters.yearFrom} ·{' '}
                 {sortLabel}
+                {result.filters.translate
+                  ? translationProvider
+                    ? ` · перевод аннотаций через ${translationProvider}`
+                    : ' · перевод аннотаций ждёт настройки сервиса'
+                  : ''}
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 xl:grid-cols-2">
@@ -130,6 +149,11 @@ export default async function LiteraturePage({
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline">{item.year}</Badge>
                       <Badge variant="outline">{item.journal}</Badge>
+                      {item.snippetTranslated ? (
+                        <Badge variant="outline">
+                          Перевод {item.translationProvider ?? 'включён'}
+                        </Badge>
+                      ) : null}
                       {item.citedByCount ? (
                         <Badge variant="outline">
                           {item.citedByCount} цитирований
@@ -142,6 +166,11 @@ export default async function LiteraturePage({
                     <p className="mt-3 text-sm leading-7 text-slate-300">
                       {item.snippet}
                     </p>
+                    {item.snippetTranslated && item.originalSnippet ? (
+                      <p className="mt-2 text-xs leading-6 text-slate-500">
+                        Оригинал: {item.originalSnippet}
+                      </p>
+                    ) : null}
                     <p className="mt-3 text-xs tracking-[0.18em] text-slate-500 uppercase">
                       {item.authors.join(', ') || 'Авторы не указаны'}
                     </p>

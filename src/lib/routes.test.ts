@@ -24,15 +24,33 @@ const jsonResponse = (payload: unknown) =>
 const installExternalFetchMock = () => {
   const state = {
     europePmcUrls: [] as string[],
+    translationUrls: [] as string[],
   }
 
-  global.fetch = (async (input) => {
+  global.fetch = (async (input, init) => {
     const url =
       typeof input === 'string'
         ? input
         : input instanceof URL
           ? input.toString()
           : input.url
+
+    if (url.includes('/v2/translate')) {
+      state.translationUrls.push(url)
+
+      const body =
+        typeof init?.body === 'string' ? JSON.parse(init.body) : { text: [] }
+      const texts = Array.isArray(body.text) ? body.text : []
+
+      return jsonResponse({
+        translations: texts.map((text: string) => ({
+          text:
+            text === 'The mTERF family regulates stress responses in tomato.'
+              ? 'Семейство mTERF регулирует стрессовые ответы у томата.'
+              : `Перевод: ${text}`,
+        })),
+      })
+    }
 
     if (url.includes('/info/genomes/')) {
       return jsonResponse({ species: 'arabidopsis_thaliana' })
@@ -190,6 +208,10 @@ test.afterEach(() => {
   global.fetch = originalFetch
   resetDatabaseForTests()
   delete process.env.PHYTOSCOPE_DATA_DIR
+  delete process.env.DEEPL_API_KEY
+  delete process.env.DEEPL_API_URL
+  delete process.env.LIBRETRANSLATE_URL
+  delete process.env.LIBRETRANSLATE_API_KEY
 })
 
 test('POST /api/analysis/upload persists completed VCF runs and exposes them via analyses APIs', async () => {
@@ -280,6 +302,7 @@ test('POST /api/analysis/upload creates queued non-VCF runs with saved files', a
 
 test('GET /api/literature applies server-side filtering and sorting', async () => {
   process.env.PHYTOSCOPE_DATA_DIR = createTempDataDir()
+  process.env.DEEPL_API_KEY = 'test-deepl-key'
   resetDatabaseForTests()
   const fetchMock = installExternalFetchMock()
 
@@ -293,6 +316,7 @@ test('GET /api/literature applies server-side filtering and sorting', async () =
   assert.equal(response.status, 200)
   assert.equal(payload.query, 'AT1G01010')
   assert.match(fetchMock.europePmcUrls[0] ?? '', /resultType=core/)
+  assert.match(fetchMock.translationUrls[0] ?? '', /\/v2\/translate$/)
   assert.equal(payload.items.length, 2)
   assert.equal(
     payload.items[0].title,
@@ -301,8 +325,14 @@ test('GET /api/literature applies server-side filtering and sorting', async () =
   assert.equal(payload.items[0].journal, 'Plants (Basel)')
   assert.equal(
     payload.items[0].snippet,
+    'Семейство mTERF регулирует стрессовые ответы у томата.',
+  )
+  assert.equal(
+    payload.items[0].originalSnippet,
     'The mTERF family regulates stress responses in tomato.',
   )
+  assert.equal(payload.items[0].snippetTranslated, true)
+  assert.equal(payload.items[0].translationProvider, 'DeepL')
   assert.equal(payload.items[1].title, 'Newer lower citation article')
 })
 

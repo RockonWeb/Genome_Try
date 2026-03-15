@@ -61,6 +61,25 @@ npm run dev
 
 После запуска приложение доступно по адресу [http://localhost:3000](http://localhost:3000).
 
+## Опциональный провайдер перевода
+
+PhytoScope умеет автоматически переводить аннотации статей на русский в разделе литературы и в карточках workbench.
+
+Для этого настройте один из серверных провайдеров:
+
+```bash
+# DeepL (предпочтительно)
+DEEPL_API_KEY=your-key
+# Необязательная замена для платного endpoint:
+# DEEPL_API_URL=https://api.deepl.com
+
+# или любой сервис, совместимый с LibreTranslate
+LIBRETRANSLATE_URL=https://your-libtranslate-host
+LIBRETRANSLATE_API_KEY=optional-key
+```
+
+Порядок выбора провайдера: сначала `DeepL`, затем `LibreTranslate`.
+
 ## Скрипты
 
 ```bash

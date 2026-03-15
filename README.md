@@ -61,6 +61,25 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Optional Translation Provider
+
+PhytoScope can automatically translate literature abstracts into Russian in the literature workspace and workbench cards.
+
+Configure one of the following server-side providers:
+
+```bash
+# DeepL (preferred)
+DEEPL_API_KEY=your-key
+# Optional override for paid plans:
+# DEEPL_API_URL=https://api.deepl.com
+
+# or any LibreTranslate-compatible service
+LIBRETRANSLATE_URL=https://your-libtranslate-host
+LIBRETRANSLATE_API_KEY=optional-key
+```
+
+Provider selection order is `DeepL` first, then `LibreTranslate`.
+
 ## Scripts
 
 ```bash

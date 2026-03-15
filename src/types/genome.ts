@@ -191,6 +191,9 @@ export interface LiteratureCard {
   year: number
   authors: string[]
   snippet: string
+  originalSnippet?: string
+  snippetTranslated?: boolean
+  translationProvider?: string
   url: string
   source: string
   doi?: string
@@ -303,6 +306,7 @@ export interface LiteratureFilters {
   yearFrom: number
   sort: LiteratureSort
   source: LiteratureSource
+  translate: boolean
   refresh: boolean
 }
 

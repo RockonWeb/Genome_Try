@@ -22,6 +22,7 @@ export async function GET(request: Request) {
   const sort = normalizeLiteratureSort(searchParams.get('sort'))
   const source =
     searchParams.get('source') === 'Europe PMC' ? 'Europe PMC' : 'Europe PMC'
+  const translate = searchParams.get('translate') !== '0'
   const refresh = searchParams.get('refresh') === '1'
 
   if (!query) {
@@ -44,6 +45,7 @@ export async function GET(request: Request) {
           yearFrom: Number.isFinite(yearFrom) ? yearFrom : defaults.yearFrom,
           sort,
           source,
+          translate,
           refresh,
         },
       }),

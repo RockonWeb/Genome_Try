@@ -12,17 +12,20 @@ export function LiteratureSearchForm({
   initialSpeciesId = DEFAULT_SPECIES_ID,
   initialYearFrom,
   initialSort,
+  initialTranslate,
 }: {
   initialQuery: string
   initialSpeciesId?: SpeciesId
   initialYearFrom: number
   initialSort: LiteratureSort
+  initialTranslate: boolean
 }) {
   const router = useRouter()
   const [query, setQuery] = useState(initialQuery)
   const [speciesId, setSpeciesId] = useState<SpeciesId>(initialSpeciesId)
   const [yearFrom, setYearFrom] = useState(String(initialYearFrom))
   const [sort, setSort] = useState<LiteratureSort>(initialSort)
+  const [translate, setTranslate] = useState(initialTranslate)
 
   const runSearch = () => {
     const params = new URLSearchParams()
@@ -35,6 +38,7 @@ export function LiteratureSearchForm({
     params.set('yearFrom', yearFrom)
     params.set('sort', sort)
     params.set('source', 'Europe PMC')
+    params.set('translate', translate ? '1' : '0')
     router.push(`/literature?${params.toString()}`)
   }
 
@@ -46,7 +50,7 @@ export function LiteratureSearchForm({
         runSearch()
       }}
     >
-      <div className="grid items-end gap-3 xl:grid-cols-[minmax(0,1fr)_220px_160px_200px_180px]">
+      <div className="grid items-end gap-3 xl:grid-cols-[minmax(0,1fr)_220px_160px_200px_200px_180px]">
         <div className="space-y-2">
           <label
             htmlFor="literature-query"
@@ -129,6 +133,20 @@ export function LiteratureSearchForm({
             <option value="newest">Сначала новые</option>
           </select>
         </div>
+
+        <label
+          htmlFor="literature-translate"
+          className="border-genome-border bg-muted/30 flex h-11 items-center gap-3 rounded-2xl border px-4 text-sm text-slate-300"
+        >
+          <input
+            id="literature-translate"
+            type="checkbox"
+            checked={translate}
+            onChange={(event) => setTranslate(event.target.checked)}
+            className="accent-primary h-4 w-4 rounded border-slate-600 bg-slate-950"
+          />
+          Переводить аннотации
+        </label>
 
         <div className="flex items-end">
           <Button type="submit" className="h-11 w-full rounded-2xl">

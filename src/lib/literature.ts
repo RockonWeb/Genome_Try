@@ -1,5 +1,6 @@
 import { DEFAULT_SPECIES_ID, getSpeciesDefinition } from '@/lib/constants'
 import { fetchCachedJson } from '@/lib/server/sourceCache'
+import { translateLiteratureCards } from '@/lib/server/translation'
 import type {
   LiteratureCard,
   LiteratureFilters,
@@ -99,6 +100,7 @@ export const getDefaultLiteratureFilters = (): LiteratureFilters => ({
   yearFrom: new Date().getFullYear() - 7,
   sort: 'relevance',
   source: 'Europe PMC',
+  translate: true,
   refresh: false,
 })
 
@@ -194,10 +196,13 @@ export const searchLiterature = async ({
     refresh: normalizedFilters.refresh,
   })
 
+  const filteredItems = mapEuropePmcResults(payload).filter(
+    (item) => item.year >= normalizedFilters.yearFrom,
+  )
   const sortedItems = sortLiteratureCards(
-    mapEuropePmcResults(payload).filter(
-      (item) => item.year >= normalizedFilters.yearFrom,
-    ),
+    normalizedFilters.translate
+      ? await translateLiteratureCards(filteredItems).catch(() => filteredItems)
+      : filteredItems,
     normalizedFilters.sort,
   )
 

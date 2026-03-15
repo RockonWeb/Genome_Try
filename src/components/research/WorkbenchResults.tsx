@@ -420,6 +420,11 @@ export function WorkbenchResults({
                 <div className="flex items-center gap-2">
                   <Badge variant="outline">{item.year}</Badge>
                   <Badge variant="outline">{item.journal}</Badge>
+                  {item.snippetTranslated ? (
+                    <Badge variant="outline">
+                      Перевод {item.translationProvider ?? 'включён'}
+                    </Badge>
+                  ) : null}
                 </div>
                 <p className="mt-3 text-base font-semibold text-white">
                   {item.title}
@@ -427,6 +432,11 @@ export function WorkbenchResults({
                 <p className="mt-3 text-sm leading-7 text-slate-300">
                   {item.snippet}
                 </p>
+                {item.snippetTranslated && item.originalSnippet ? (
+                  <p className="mt-2 text-xs leading-6 text-slate-500">
+                    Оригинал: {item.originalSnippet}
+                  </p>
+                ) : null}
                 <p className="mt-3 text-xs tracking-[0.18em] text-slate-500 uppercase">
                   {item.authors.join(', ')}
                   {item.citedByCount

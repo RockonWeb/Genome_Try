@@ -10,7 +10,7 @@ import { Tooltip } from '@/components/ui/Tooltip'
 const pageMeta: Record<string, { title: string; subtitle: string }> = {
   '/': {
     title: 'Исследовательская панель',
-    subtitle: 'Mock-платформа для визуализации и приоритизации геномных находок.',
+    subtitle: 'Платформа для визуализации и приоритизации геномных находок.',
   },
   '/upload': {
     title: 'Загрузка данных',
@@ -59,7 +59,7 @@ export const Header = () => {
 
         <div className="flex items-center gap-2 md:gap-3">
           <Badge variant="success" className="hidden md:inline-flex">
-            Mock API ready
+            Ensembl VEP ready
           </Badge>
           <Tooltip content="Новых лабораторных оповещений нет">
             <button

@@ -90,8 +90,9 @@ export default function UploadPage() {
           </Badge>
           <CardTitle className="text-3xl">Загрузка геномных данных</CardTitle>
           <CardDescription>
-            Выберите файл, сборку генома и запустите mock-анализ с прогрессом
-            обработки и автоматическим переходом в дашборд.
+            Выберите файл, сборку генома и запустите анализ. Для `VCF` на `hg38/hg19`
+            используется реальная аннотация через Ensembl VEP, для остальных
+            сценариев остаётся fallback-пайплайн.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -117,10 +118,11 @@ export default function UploadPage() {
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
                 Pipeline mode
               </p>
-              <p className="mt-3 text-sm font-semibold text-white">Clinical mock run</p>
+              <p className="mt-3 text-sm font-semibold text-white">Ensembl VEP + fallback</p>
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                Результаты создаются на базе локальных mock-данных и готовы к
-                интеграции с реальным API.
+                `VCF`-варианты аннотируются через внешний Ensembl REST API. `FASTA`,
+                `BAM`, `BED` и `T2T` по-прежнему идут через демонстрационный
+                fallback, потому что для них нужен полноценный backend-пайплайн.
               </p>
             </div>
           </div>
@@ -153,8 +155,9 @@ export default function UploadPage() {
                   Перетащите файл в область загрузки
                 </h2>
                 <p className="mt-3 max-w-xl text-sm leading-7 text-slate-400">
-                  Поддерживаются FASTA, VCF, BAM и BED. После выбора файла проект
-                  имитирует обработку и создаёт запись в истории отчётов.
+                  Поддерживаются FASTA, VCF, BAM и BED. Для VCF на hg38/hg19
+                  приложение отправляет вариантные записи в Ensembl VEP и строит
+                  дашборд из реальной аннотации.
                 </p>
                 <Button
                   size="lg"
@@ -279,15 +282,16 @@ export default function UploadPage() {
           <CardHeader>
             <CardTitle>Безопасность и среда</CardTitle>
             <CardDescription>
-              Здесь описана mock-модель безопасности и работы пайплайна.
+              Здесь описана схема загрузки, проксирования и fallback-обработки.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-start gap-3 rounded-2xl border border-genome-border bg-muted/40 p-4">
               <ShieldCheck className="mt-0.5 h-5 w-5 text-primary" />
               <p className="text-sm leading-6 text-slate-400">
-                Данные обрабатываются локально на стороне интерфейса, поэтому можно
-                безопасно тестировать сценарии без реального backend-сервиса.
+                Файл отправляется только во внутренний route приложения. Для
+                `VCF/hg38/hg19` route проксирует аннотацию в Ensembl REST API,
+                не открывая внешний сервис напрямую из браузера.
               </p>
             </div>
             <div className="flex items-start gap-3 rounded-2xl border border-genome-border bg-muted/40 p-4">

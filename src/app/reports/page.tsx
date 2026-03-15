@@ -236,7 +236,7 @@ export default function ReportsPage() {
                 <p className="text-sm font-semibold text-white">
                   {storageUsedGb.toFixed(1)} GB
                 </p>
-                <p className="text-sm text-slate-400">Суммарный размер mock-архива</p>
+                <p className="text-sm text-slate-400">Суммарный размер локального архива</p>
               </div>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-genome-border">

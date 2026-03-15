@@ -107,7 +107,7 @@ export const printAnalysisReport = (
   </head>
   <body>
     <h1>GenomeScope Analysis Report</h1>
-    <p class="muted">Подготовлено из mock-сервиса приложения. Используйте печать браузера для сохранения в PDF.</p>
+    <p class="muted">Подготовлено из текущего API-слоя GenomeScope. Используйте печать браузера для сохранения в PDF.</p>
 
     <div class="meta">
       <div class="card">

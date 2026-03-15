@@ -35,9 +35,9 @@ const featureCards = [
     accent: 'text-secondary',
   },
   {
-    title: 'Mock API и Zustand',
+    title: 'Ensembl API и Zustand',
     description:
-      'Сервисный слой и клиентское состояние готовы к замене на реальный лабораторный backend.',
+      'VCF-аннотация уже идёт через Ensembl REST API, а клиентское состояние готово к полноценному backend.',
     icon: Workflow,
     accent: 'text-amber-400',
   },
@@ -52,7 +52,7 @@ const featureCards = [
 
 const workflowSteps = [
   'Загрузите файл и выберите сборку генома.',
-  'Получите mock-анализ с прогрессом обработки и сохранением в историю.',
+  'Получите аннотацию Ensembl для VCF или fallback-анализ для остальных форматов.',
   'Изучите приоритетные варианты, фильтры, экспорт CSV и печатный отчёт.',
 ]
 
@@ -64,7 +64,7 @@ export default function Home() {
         <div className="relative z-10 flex flex-col gap-8">
           <div className="flex flex-wrap items-center gap-3">
             <Badge variant="success">Next.js 16 + React 19</Badge>
-            <Badge variant="outline">Рабочий mock pipeline</Badge>
+            <Badge variant="outline">Ensembl VEP connected</Badge>
           </div>
 
           <div className="max-w-4xl">
@@ -100,7 +100,7 @@ export default function Home() {
             <Card className="bg-white/5">
               <CardHeader className="pb-3">
                 <CardTitle>12 приоритетных вариантов</CardTitle>
-                <CardDescription>Mock-набор для графиков, фильтров и детальной модали</CardDescription>
+                <CardDescription>Реальные VCF-аннотации или fallback-набор для графиков и фильтров</CardDescription>
               </CardHeader>
             </Card>
             <Card className="bg-white/5">
@@ -153,7 +153,7 @@ export default function Home() {
           <CardHeader>
             <CardTitle className="text-2xl">Поддерживаемые данные</CardTitle>
             <CardDescription>
-              Форматы и сборки доступны в загрузчике и используются во всей mock-цепочке.
+              Форматы и сборки доступны в загрузчике: `VCF/hg38/hg19` идут в Ensembl, остальные сценарии работают через fallback-цепочку.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">

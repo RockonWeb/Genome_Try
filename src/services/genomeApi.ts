@@ -1,4 +1,4 @@
-import { createUploadedAnalysis, mockReports, mockVariantsByAnalysis } from '@/lib/mockData'
+import { mockReports, mockVariantsByAnalysis } from '@/lib/mockData'
 import type {
   AnalysisSummary,
   GenomeBuildId,
@@ -19,12 +19,35 @@ export const genomeApi = {
     onProgress: (progress: number) => void,
     genomeBuild: GenomeBuildId,
   ): Promise<UploadAnalysisResult> {
-    for (const step of [14, 29, 47, 66, 82, 94, 100]) {
+    for (const step of [12, 24, 39, 57, 72, 86]) {
       await delay(140)
       onProgress(step)
     }
 
-    return createUploadedAnalysis(file, genomeBuild)
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('genomeBuild', genomeBuild)
+
+    const response = await fetch('/api/analysis/upload', {
+      method: 'POST',
+      body: formData,
+    })
+
+    const payload = (await response.json()) as
+      | UploadAnalysisResult
+      | { message?: string }
+
+    if (!response.ok) {
+      throw new Error(
+        'message' in payload && payload.message
+          ? payload.message
+          : 'Upload request failed',
+      )
+    }
+
+    onProgress(100)
+
+    return payload as UploadAnalysisResult
   },
 
   async getVariants(id: string): Promise<GenomeVariant[]> {

@@ -72,7 +72,7 @@ export const Sidebar = () => {
           <div>
             <p className="text-sm font-semibold text-white">Research support</p>
             <p className="mt-1 text-sm leading-relaxed text-slate-400">
-              Mock-приложение готово к подключению реального пайплайна и API-слоя.
+              VCF-аннотация уже подключена через Ensembl, а для тяжёлых форматов можно нарастить отдельный pipeline backend.
             </p>
           </div>
           <p className="text-xs text-slate-500">{APP_CONFIG.supportEmail}</p>

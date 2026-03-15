@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter), "Inter", system-ui, sans-serif;
+
+  --color-background: #050816;
+  --color-foreground: #f8fafc;
+
+  --color-card: #0b1221;
+  --color-card-foreground: #f8fafc;
+
+  --color-popover: #101828;
+  --color-popover-foreground: #f8fafc;
+
+  --color-primary: #2dd4bf;
+  --color-primary-foreground: #042f2e;
+
+  --color-secondary: #60a5fa;
+  --color-secondary-foreground: #eff6ff;
+
+  --color-accent: #162033;
+  --color-accent-foreground: #f8fafc;
+
+  --color-muted: #111c31;
+  --color-muted-foreground: #94a3b8;
+
+  --color-destructive: #fb7185;
+  --color-destructive-foreground: #fff1f2;
+
+  --color-border: #1f2a44;
+  --color-input: #1f2a44;
+  --color-ring: #2dd4bf;
+
+  --color-brand-primary: #2dd4bf;
+  --color-brand-secondary: #60a5fa;
+  --color-brand-accent: #fb7185;
+
+  --color-genome-bg: #050816;
+  --color-genome-card: #0b1221;
+  --color-genome-border: #1f2a44;
+
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+}
+
+:root {
+  color-scheme: dark;
+  --background: #050816;
+  --foreground: #f8fafc;
+}
+
+html {
+  background: var(--background);
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(45, 212, 191, 0.12), transparent 35%),
+    radial-gradient(circle at top right, rgba(96, 165, 250, 0.12), transparent 28%),
+    linear-gradient(180deg, #050816 0%, #081124 100%);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  border-color: rgba(148, 163, 184, 0.14);
+}
+
+.glass {
+  background: rgba(11, 18, 33, 0.72);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.genome-gradient {
+  background: linear-gradient(135deg, #2dd4bf 0%, #60a5fa 100%);
+}
+
+.noise-bg {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.035;
+  pointer-events: none;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}

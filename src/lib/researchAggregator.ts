@@ -1,16 +1,28 @@
 import { DEFAULT_SPECIES_ID, getSpeciesDefinition } from '@/lib/constants'
-import { annotatePlantVariant, fetchGeneProfileFromEnsembl, fetchGenesForRegion, fetchOrthologues, getLocalVariantContext, resolveGeneIdFromSymbol } from '@/lib/ensembl'
-import { getMockWorkbench } from '@/lib/mockData'
+import {
+  annotatePlantVariant,
+  fetchGeneProfileFromEnsembl,
+  fetchGenesForRegion,
+  fetchOrthologues,
+  getLocalVariantContext,
+  resolveGeneIdFromSymbol,
+} from '@/lib/ensembl'
+import {
+  getDefaultLiteratureFilters,
+  searchLiterature,
+} from '@/lib/literature'
+import { fetchCachedJson } from '@/lib/server/sourceCache'
+import { getSourceStatuses } from '@/lib/sourceHealth'
 import { parseResearchQuery } from '@/lib/query'
 import type {
   ExpressionProfile,
   FunctionTerm,
-  LiteratureCard,
   RegulationEvidence,
   SearchCandidate,
   SearchResolution,
   SourceStatus,
   SpeciesId,
+  VariantAnnotation,
   WorkbenchData,
 } from '@/types/genome'
 
@@ -34,45 +46,10 @@ interface AtlasBioEntityInfo {
   }>
 }
 
-interface EuropePmcSearchResponse {
-  resultList?: {
-    result?: Array<{
-      id?: string
-      title?: string
-      journalTitle?: string
-      pubYear?: string
-      authorString?: string
-      abstractText?: string
-      doi?: string
-      citedByCount?: number
-      pmid?: string
-      source?: string
-    }>
-  }
-}
+const THALEMINE_TTL_MS = 24 * 60 * 60 * 1000
+const ATLAS_TTL_MS = 24 * 60 * 60 * 1000
 
-const today = () => new Date().toISOString().slice(0, 10)
-
-const fetchJson = async <T>(url: string) => {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 12000)
-
-  try {
-    const response = await fetch(url, {
-      headers: { Accept: 'application/json' },
-      cache: 'no-store',
-      signal: controller.signal,
-    })
-
-    if (!response.ok) {
-      throw new Error(`Request failed: ${response.status}`)
-    }
-
-    return (await response.json()) as T
-  } finally {
-    clearTimeout(timeout)
-  }
-}
+const today = () => new Date().toISOString()
 
 const limit = <T,>(items: T[], count: number) => items.slice(0, count)
 
@@ -131,7 +108,7 @@ const mapAtlasToExpression = (
     ],
     source: 'Expression Atlas',
     atlasLink: `https://www.ebi.ac.uk/gxa/genes/${geneId}?species=${speciesId}`,
-    lastUpdated: today(),
+    lastUpdated: today().slice(0, 10),
   }
 }
 
@@ -140,7 +117,7 @@ const mapAtlasToRegulation = (payload: AtlasBioEntityInfo): RegulationEvidence[]
 
   return limit(goTerms?.values ?? [], 3).map((item, index) => ({
     title: item.text,
-    summary: `Ontology-backed evidence term from Expression Atlas bioentity information.`,
+    summary: 'Ontology-backed evidence term from Expression Atlas bioentity information.',
     evidenceType: 'computational',
     source: 'Expression Atlas',
     tags: ['GO-backed', 'bioentity info'],
@@ -149,56 +126,57 @@ const mapAtlasToRegulation = (payload: AtlasBioEntityInfo): RegulationEvidence[]
   }))
 }
 
-const mapEuropePmc = (payload: EuropePmcSearchResponse): LiteratureCard[] =>
-  limit(payload.resultList?.result ?? [], 6).map((item, index) => ({
-    id: item.id ?? item.pmid ?? `europepmc-${index + 1}`,
-    title: item.title ?? 'Untitled article',
-    journal: item.journalTitle ?? 'Unknown journal',
-    year: Number(item.pubYear) || new Date().getFullYear(),
-    authors: item.authorString
-      ? item.authorString.split(',').map((author) => author.trim()).filter(Boolean).slice(0, 4)
-      : [],
-    snippet: safeSummary(item.abstractText, 'Europe PMC returned metadata without abstract text.'),
-    url: item.pmid
-      ? `https://europepmc.org/article/MED/${item.pmid}`
-      : `https://europepmc.org/search?query=${encodeURIComponent(item.title ?? '')}`,
-    source: 'Europe PMC',
-    doi: item.doi,
-    citedByCount: item.citedByCount,
-  }))
-
 const getThaleMineUrl = (geneId: string) =>
   `https://bar.utoronto.ca/thalemine/service/search?q=${encodeURIComponent(geneId)}&format=json`
 
 const fetchThaleMineCandidate = async (query: string) => {
-  const payload = await fetchJson<ThaleMineSearchResponse>(getThaleMineUrl(query))
+  const { payload } = await fetchCachedJson<ThaleMineSearchResponse>({
+    source: 'thalemine',
+    url: getThaleMineUrl(query),
+    ttlMs: THALEMINE_TTL_MS,
+  })
+
   return payload.results?.[0] ?? null
 }
 
-const fetchAtlasInfo = async (geneId: string) =>
-  fetchJson<AtlasBioEntityInfo>(
-    `https://www.ebi.ac.uk/gxa/json/bioentity-information/${encodeURIComponent(geneId)}`,
-  )
+const fetchAtlasInfo = async (geneId: string) => {
+  const { payload } = await fetchCachedJson<AtlasBioEntityInfo>({
+    source: 'expression-atlas',
+    url: `https://www.ebi.ac.uk/gxa/json/bioentity-information/${encodeURIComponent(geneId)}`,
+    ttlMs: ATLAS_TTL_MS,
+  })
 
-const fetchEuropePmc = async (query: string) =>
-  fetchJson<EuropePmcSearchResponse>(
-    `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}&format=json&pageSize=6`,
-  )
+  return payload
+}
 
-const makeSourceStatus = (
-  source: string,
-  label: string,
-  status: SourceStatus['status'],
-  coverage: SourceStatus['coverage'],
-  detail: string,
-): SourceStatus => ({
-  source,
-  label,
-  status,
-  coverage,
-  detail,
-  lastChecked: today(),
-})
+const createEmptyWorkbench = async ({
+  raw,
+  speciesId,
+  sourceStatus,
+  variants,
+}: {
+  raw: string
+  speciesId: SpeciesId
+  sourceStatus?: SourceStatus[]
+  variants?: VariantAnnotation[]
+}): Promise<WorkbenchData> => {
+  const query = parseResearchQuery(raw, speciesId)
+  return {
+    query,
+    species: getSpeciesDefinition(speciesId),
+    gene: null,
+    locus: query.locus ?? null,
+    variants: variants ?? [],
+    expression: null,
+    regulation: [],
+    functionTerms: [],
+    interactions: [],
+    orthology: [],
+    literature: [],
+    supportingLinks: [],
+    sourceStatus: sourceStatus ?? [],
+  }
+}
 
 export const resolveSearch = async (
   q: string,
@@ -240,7 +218,7 @@ export const resolveSearch = async (
         })
       }
     } catch {
-      // Continue with other sources.
+      // Ensembl is optional here; keep looking for other evidence.
     }
 
     if (speciesId === 'arabidopsis_thaliana') {
@@ -257,11 +235,14 @@ export const resolveSearch = async (
           })
         }
       } catch {
-        // Ignore secondary source failure.
+        // Secondary source failure should not break resolution.
       }
     }
 
-    return { query, candidates }
+    return {
+      query,
+      candidates: Array.from(new Map(candidates.map((candidate) => [candidate.id, candidate])).values()),
+    }
   }
 
   return { query, candidates: [] }
@@ -271,124 +252,103 @@ const buildGeneWorkbench = async (
   geneId: string,
   speciesId: SpeciesId,
 ): Promise<WorkbenchData> => {
+  const sourceStatus = await getSourceStatuses(speciesId).catch(() => [])
   const species = getSpeciesDefinition(speciesId)
-  const liveSourceStatus: SourceStatus[] = []
 
+  let gene
   try {
-    const [gene, orthology, atlasPayload, literaturePayload, thaleMineCandidate] = await Promise.all([
-      fetchGeneProfileFromEnsembl(geneId, speciesId),
-      fetchOrthologues(geneId, speciesId).catch(() => []),
-      fetchAtlasInfo(geneId).catch(() => null),
-      fetchEuropePmc(`${geneId} ${species.label}`).catch(() => null),
-      speciesId === 'arabidopsis_thaliana' ? fetchThaleMineCandidate(geneId).catch(() => null) : Promise.resolve(null),
-    ])
-
-    liveSourceStatus.push(
-      makeSourceStatus('ensembl', 'Ensembl Plants REST', 'online', 'full', 'Lookup, overlap и orthology отработали.'),
-    )
-
-    if (atlasPayload) {
-      liveSourceStatus.push(
-        makeSourceStatus('expression-atlas', 'Expression Atlas', 'online', 'partial', 'Bioentity information fetched successfully.'),
-      )
-    } else {
-      liveSourceStatus.push(
-        makeSourceStatus('expression-atlas', 'Expression Atlas', 'degraded', 'link-only', 'No structured atlas payload; links remain available.'),
-      )
-    }
-
-    if (thaleMineCandidate) {
-      gene.sourceSummaries.unshift({
-        source: 'thalemine',
-        label: 'BAR ThaleMine',
-        description: safeSummary(
-          thaleMineCandidate.fields?.tairCuratorSummary,
-          thaleMineCandidate.fields?.tairComputationalDescription,
-        ),
-        url: `https://bar.utoronto.ca/thalemine/keywordSearchResults.do?searchTerm=${encodeURIComponent(geneId)}`,
-      })
-      gene.aliases = Array.from(
-        new Set([
-          ...gene.aliases,
-          ...(thaleMineCandidate.fields?.tairAliases?.split(',').map((item) => item.trim()) ?? []),
-        ]),
-      ).filter(Boolean)
-      liveSourceStatus.push(
-        makeSourceStatus('thalemine', 'BAR ThaleMine', 'online', 'partial', 'Arabidopsis-specific curated summary resolved.'),
-      )
-    } else if (speciesId === 'arabidopsis_thaliana') {
-      liveSourceStatus.push(
-        makeSourceStatus('thalemine', 'BAR ThaleMine', 'degraded', 'link-only', 'ThaleMine search was not available for this query.'),
-      )
-    }
-
-    if (literaturePayload) {
-      liveSourceStatus.push(
-        makeSourceStatus('europepmc', 'Europe PMC', 'online', 'full', 'Recent literature cards fetched successfully.'),
-      )
-    } else {
-      liveSourceStatus.push(
-        makeSourceStatus('europepmc', 'Europe PMC', 'degraded', 'link-only', 'Literature fallback to external search links only.'),
-      )
-    }
-
-    liveSourceStatus.push(
-      makeSourceStatus('tair', 'TAIR', 'degraded', 'link-only', 'Premium connector not configured in this workspace.'),
-    )
-
-    const atlasTerms = atlasPayload ? mapAtlasToFunctionTerms(atlasPayload) : []
-    const localVariants = getLocalVariantContext(geneId)
-
-    return {
-      query: {
-        raw: geneId,
-        normalized: geneId,
-        type: 'gene',
-        speciesId,
-        assemblyId: gene.assemblyId,
-        geneId,
-        geneSymbol: gene.symbol,
-      },
-      species,
-      gene,
-      locus: {
-        chromosome: gene.location.chromosome,
-        start: gene.location.start,
-        end: gene.location.end,
-        regionLabel: `${gene.location.chromosome}:${gene.location.start}-${gene.location.end}`,
-        overlappingGeneIds: [gene.id],
-        source: 'Ensembl Plants',
-      },
-      variants: localVariants,
-      expression: atlasPayload ? mapAtlasToExpression(geneId, speciesId, atlasPayload) : null,
-      regulation: atlasPayload ? mapAtlasToRegulation(atlasPayload) : [],
-      functionTerms: atlasTerms,
-      interactions:
-        localVariants.length > 0
-          ? [
-              {
-                partnerId: localVariants[0].geneId ?? gene.id,
-                partnerLabel: localVariants[0].geneSymbol,
-                relation: 'shared uploaded/mock variant context',
-                source: 'local research sandbox',
-                confidence: 0.64,
-              },
-            ]
-          : [],
-      orthology,
-      literature: literaturePayload ? mapEuropePmc(literaturePayload) : [],
-      supportingLinks: [
-        ...gene.externalLinks,
-        {
-          label: 'Europe PMC search',
-          source: 'Europe PMC',
-          url: `https://europepmc.org/search?query=${encodeURIComponent(`${geneId} ${species.label}`)}`,
-        },
-      ],
-      sourceStatus: liveSourceStatus,
-    }
+    gene = await fetchGeneProfileFromEnsembl(geneId, speciesId)
   } catch {
-    return getMockWorkbench(geneId, speciesId)
+    return createEmptyWorkbench({
+      raw: geneId,
+      speciesId,
+      sourceStatus,
+    })
+  }
+
+  const [orthology, atlasPayload, literatureResult, thaleMineCandidate] = await Promise.all([
+    fetchOrthologues(geneId, speciesId).catch(() => []),
+    fetchAtlasInfo(geneId).catch(() => null),
+    searchLiterature({
+      query: geneId,
+      speciesId,
+      filters: {
+        ...getDefaultLiteratureFilters(),
+        refresh: false,
+      },
+    }).catch(() => null),
+    speciesId === 'arabidopsis_thaliana'
+      ? fetchThaleMineCandidate(geneId).catch(() => null)
+      : Promise.resolve(null),
+  ])
+
+  if (thaleMineCandidate) {
+    gene.sourceSummaries.unshift({
+      source: 'thalemine',
+      label: 'BAR ThaleMine',
+      description: safeSummary(
+        thaleMineCandidate.fields?.tairCuratorSummary,
+        thaleMineCandidate.fields?.tairComputationalDescription,
+      ),
+      url: `https://bar.utoronto.ca/thalemine/keywordSearchResults.do?searchTerm=${encodeURIComponent(geneId)}`,
+    })
+    gene.aliases = Array.from(
+      new Set([
+        ...gene.aliases,
+        ...(thaleMineCandidate.fields?.tairAliases?.split(',').map((item) => item.trim()) ?? []),
+      ]),
+    ).filter(Boolean)
+  }
+
+  const localVariants = getLocalVariantContext(geneId)
+
+  return {
+    query: {
+      raw: geneId,
+      normalized: geneId,
+      type: 'gene',
+      speciesId,
+      assemblyId: gene.assemblyId,
+      geneId,
+      geneSymbol: gene.symbol,
+    },
+    species,
+    gene,
+    locus: {
+      chromosome: gene.location.chromosome,
+      start: gene.location.start,
+      end: gene.location.end,
+      regionLabel: `${gene.location.chromosome}:${gene.location.start}-${gene.location.end}`,
+      overlappingGeneIds: [gene.id],
+      source: 'Ensembl Plants',
+    },
+    variants: localVariants,
+    expression: atlasPayload ? mapAtlasToExpression(geneId, speciesId, atlasPayload) : null,
+    regulation: atlasPayload ? mapAtlasToRegulation(atlasPayload) : [],
+    functionTerms: atlasPayload ? mapAtlasToFunctionTerms(atlasPayload) : [],
+    interactions:
+      localVariants.length > 0
+        ? [
+            {
+              partnerId: localVariants[0].geneId ?? gene.id,
+              partnerLabel: localVariants[0].geneSymbol,
+              relation: 'shared uploaded variant context across persisted runs',
+              source: 'local persisted analyses',
+              confidence: 0.64,
+            },
+          ]
+        : [],
+    orthology,
+    literature: literatureResult?.items.slice(0, 6) ?? [],
+    supportingLinks: [
+      ...gene.externalLinks,
+      {
+        label: 'Europe PMC search',
+        source: 'Europe PMC',
+        url: `https://europepmc.org/search?query=${encodeURIComponent(`${geneId} ${species.label}`)}`,
+      },
+    ],
+    sourceStatus,
   }
 }
 
@@ -396,12 +356,17 @@ const buildLocusWorkbench = async (
   regionLabel: string,
   speciesId: SpeciesId,
 ): Promise<WorkbenchData> => {
+  const sourceStatus = await getSourceStatuses(speciesId).catch(() => [])
+
   try {
     const genes = await fetchGenesForRegion(regionLabel, speciesId)
     const primaryGene = genes[0]
 
     if (primaryGene?.id) {
       const workbench = await buildGeneWorkbench(primaryGene.id, speciesId)
+      const [chromosome, coords] = regionLabel.split(':')
+      const [start, end] = coords.split('-').map(Number)
+
       return {
         ...workbench,
         query: {
@@ -413,47 +378,54 @@ const buildLocusWorkbench = async (
           geneId: workbench.gene?.id,
           geneSymbol: workbench.gene?.symbol,
           locus: {
-            chromosome: regionLabel.split(':')[0],
-            start: Number(regionLabel.split(':')[1]?.split('-')[0]),
-            end: Number(regionLabel.split('-')[1]),
+            chromosome,
+            start,
+            end,
             regionLabel,
             overlappingGeneIds: genes.map((gene) => gene.id),
             source: 'Ensembl Plants',
           },
         },
         locus: {
-          chromosome: regionLabel.split(':')[0],
-          start: Number(regionLabel.split(':')[1]?.split('-')[0]),
-          end: Number(regionLabel.split('-')[1]),
+          chromosome,
+          start,
+          end,
           regionLabel,
           overlappingGeneIds: genes.map((gene) => gene.id),
           source: 'Ensembl Plants',
         },
-        variants: workbench.variants.filter((variant) => {
-          const [chromosome, coords] = regionLabel.split(':')
-          const [start, end] = coords.split('-').map(Number)
-          return (
+        variants: workbench.variants.filter(
+          (variant) =>
             variant.chromosome === chromosome.toUpperCase() &&
             variant.position >= start &&
-            variant.position <= end
-          )
-        }),
+            variant.position <= end,
+        ),
+        sourceStatus,
       }
     }
   } catch {
-    // Fall through to mock.
+    // Fall back to an empty locus workbench.
   }
 
-  return getMockWorkbench('AT1G01010', speciesId)
+  return createEmptyWorkbench({
+    raw: regionLabel,
+    speciesId,
+    sourceStatus,
+  })
 }
 
 const buildVariantWorkbench = async (
   variantLabel: string,
   speciesId: SpeciesId,
 ): Promise<WorkbenchData> => {
+  const sourceStatus = await getSourceStatuses(speciesId).catch(() => [])
   const match = variantLabel.match(/^([A-Z0-9]+):(\d+)\s+([ACGTN]+)>([ACGTN]+)$/)
   if (!match) {
-    return getMockWorkbench('AT1G01010', speciesId)
+    return createEmptyWorkbench({
+      raw: variantLabel,
+      speciesId,
+      sourceStatus,
+    })
   }
 
   try {
@@ -480,24 +452,22 @@ const buildVariantWorkbench = async (
           variantLabel,
         },
         variants: [variant, ...workbench.variants.filter((item) => item.id !== variant.id)],
+        sourceStatus,
       }
     }
 
-    return {
-      ...getMockWorkbench('AT1G01010', speciesId),
-      query: {
-        raw: variantLabel,
-        normalized: variantLabel,
-        type: 'variant',
-        speciesId,
-        assemblyId: getSpeciesDefinition(speciesId).defaultAssemblyId,
-        variantLabel,
-      },
-      gene: null,
+    return createEmptyWorkbench({
+      raw: variantLabel,
+      speciesId,
+      sourceStatus,
       variants: [variant],
-    }
+    })
   } catch {
-    return getMockWorkbench('AT1G01010', speciesId)
+    return createEmptyWorkbench({
+      raw: variantLabel,
+      speciesId,
+      sourceStatus,
+    })
   }
 }
 
@@ -527,41 +497,11 @@ export const buildWorkbenchFromQuery = async (
     return buildVariantWorkbench(query.variantLabel, speciesId)
   }
 
-  return getMockWorkbench('AT1G01010', speciesId)
+  return createEmptyWorkbench({
+    raw,
+    speciesId,
+    sourceStatus: await getSourceStatuses(speciesId).catch(() => []),
+  })
 }
 
-export const getSourceStatuses = async (speciesId: SpeciesId = DEFAULT_SPECIES_ID) => {
-  const statuses: SourceStatus[] = []
-
-  try {
-    await fetchGeneProfileFromEnsembl('AT1G01010', 'arabidopsis_thaliana')
-    statuses.push(makeSourceStatus('ensembl', 'Ensembl Plants REST', 'online', 'full', 'Lookup endpoint responded successfully.'))
-  } catch {
-    statuses.push(makeSourceStatus('ensembl', 'Ensembl Plants REST', 'offline', 'partial', 'Lookup endpoint did not respond in time.'))
-  }
-
-  try {
-    await fetchThaleMineCandidate('AT1G01010')
-    statuses.push(makeSourceStatus('thalemine', 'BAR ThaleMine', 'online', 'partial', 'Search endpoint returned Arabidopsis hits.'))
-  } catch {
-    statuses.push(makeSourceStatus('thalemine', 'BAR ThaleMine', 'degraded', 'link-only', 'Search endpoint unavailable.'))
-  }
-
-  try {
-    await fetchAtlasInfo('AT1G01010')
-    statuses.push(makeSourceStatus('expression-atlas', 'Expression Atlas', 'online', 'partial', 'Bioentity information endpoint responded.'))
-  } catch {
-    statuses.push(makeSourceStatus('expression-atlas', 'Expression Atlas', 'degraded', 'link-only', 'Only external atlas links are available.'))
-  }
-
-  try {
-    await fetchEuropePmc(`AT1G01010 ${getSpeciesDefinition(speciesId).label}`)
-    statuses.push(makeSourceStatus('europepmc', 'Europe PMC', 'online', 'full', 'Literature search endpoint responded.'))
-  } catch {
-    statuses.push(makeSourceStatus('europepmc', 'Europe PMC', 'degraded', 'link-only', 'Europe PMC search unavailable.'))
-  }
-
-  statuses.push(makeSourceStatus('tair', 'TAIR', 'degraded', 'link-only', 'Premium connector is optional and disabled by default.'))
-
-  return statuses
-}
+export { getSourceStatuses }

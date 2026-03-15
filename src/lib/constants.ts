@@ -157,6 +157,7 @@ export const IMPACT_OPTIONS: Array<{
 ]
 
 export const STATUS_LABELS = {
+  queued: 'В очереди',
   processing: 'В обработке',
   completed: 'Завершён',
   failed: 'С ошибкой',

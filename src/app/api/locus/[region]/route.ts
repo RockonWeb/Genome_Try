@@ -5,6 +5,8 @@ import { buildWorkbenchFromQuery } from '@/lib/researchAggregator'
 const isSpecies = (value: string): value is (typeof SPECIES_OPTIONS)[number]['id'] =>
   SPECIES_OPTIONS.some((species) => species.id === value)
 
+export const runtime = 'nodejs'
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ region: string }> },

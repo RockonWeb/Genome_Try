@@ -18,6 +18,8 @@ const bodySchema = z.object({
     .optional(),
 })
 
+export const runtime = 'nodejs'
+
 export async function POST(request: Request) {
   const parsed = bodySchema.safeParse(await request.json().catch(() => null))
 

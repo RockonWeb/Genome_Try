@@ -6,6 +6,7 @@ import {
   FileText,
   Home,
   LayoutDashboard,
+  LibraryBig,
   LogOut,
   ScanSearch,
   Upload,
@@ -19,6 +20,7 @@ const navItems = [
   { href: '/upload', icon: Upload, label: 'Upload' },
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/reports', icon: FileText, label: 'Reports' },
+  { href: '/literature', icon: LibraryBig, label: 'Literature' },
 ]
 
 const isActivePath = (pathname: string, href: string) =>

@@ -24,6 +24,7 @@ const sourceStatus = (): SourceStatus[] => [
     coverage: 'full',
     detail: 'Lookup, overlap и orthology доступны.',
     lastChecked: now,
+    observedVia: 'live',
   },
   {
     source: 'thalemine',
@@ -32,6 +33,7 @@ const sourceStatus = (): SourceStatus[] => [
     coverage: 'partial',
     detail: 'Curated Arabidopsis summary и search доступны.',
     lastChecked: now,
+    observedVia: 'live',
   },
   {
     source: 'expression-atlas',
@@ -40,6 +42,7 @@ const sourceStatus = (): SourceStatus[] => [
     coverage: 'partial',
     detail: 'Bioentity metadata и atlas links доступны.',
     lastChecked: now,
+    observedVia: 'live',
   },
   {
     source: 'europepmc',
@@ -48,6 +51,7 @@ const sourceStatus = (): SourceStatus[] => [
     coverage: 'full',
     detail: 'Literature cards и citation counts доступны.',
     lastChecked: now,
+    observedVia: 'live',
   },
   {
     source: 'tair',
@@ -56,6 +60,7 @@ const sourceStatus = (): SourceStatus[] => [
     coverage: 'link-only',
     detail: 'Опциональный premium connector не активирован.',
     lastChecked: now,
+    observedVia: 'live',
   },
 ]
 
@@ -472,6 +477,11 @@ const createSummary = ({
   fileSizeMb,
   focusGene: variants[0]?.geneSymbol ?? 'N/A',
   insightCount: variants.length + 6,
+  createdAt: `${date}T00:00:00.000Z`,
+  updatedAt: `${date}T00:00:00.000Z`,
+  statusDetail: status === 'processing' ? 'Mock processing run.' : null,
+  pipelineMode: format === 'VCF' ? 'vcf_live' : 'deferred_backend',
+  storedFilePath: null,
 })
 
 const analysisA = createVariantSet('PS-AT-4102', 0, 0)

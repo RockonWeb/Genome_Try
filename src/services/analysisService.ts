@@ -1,29 +1,34 @@
 import type {
   ChartData,
-  ManhattanPoint,
+  GenomeContextPoint,
+  VariantAnnotation,
   VariantFilters,
-  GenomeVariant,
 } from '@/types/genome'
 
 const chromosomeRank = (chromosome: string) => {
-  const normalized = chromosome.replace('chr', '')
+  const normalized = chromosome.replace('chr', '').toUpperCase()
+  const numeric = Number(normalized)
 
-  if (normalized === 'X') {
-    return 23
+  if (Number.isFinite(numeric)) {
+    return numeric
   }
 
-  if (normalized === 'Y') {
-    return 24
+  if (normalized === 'C') {
+    return 100
   }
 
-  return Number(normalized)
+  if (normalized === 'M') {
+    return 101
+  }
+
+  return 999
 }
 
 const colorByIndex = (index: number) =>
-  index % 2 === 0 ? '#2dd4bf' : '#60a5fa'
+  ['#7dd3fc', '#f59e0b', '#34d399', '#f87171', '#a78bfa'][index % 5]
 
 export const analysisService = {
-  calculateChromosomeDistribution(variants: GenomeVariant[]): ChartData[] {
+  calculateChromosomeDistribution(variants: VariantAnnotation[]): ChartData[] {
     const counts: Record<string, number> = {}
 
     variants.forEach((variant) => {
@@ -39,17 +44,17 @@ export const analysisService = {
       }))
   },
 
-  calculateMutationTypeStats(variants: GenomeVariant[]): ChartData[] {
+  calculateImpactDistribution(variants: VariantAnnotation[]): ChartData[] {
     const counts: Record<string, number> = {}
     const colors = {
-      SNV: '#2dd4bf',
-      Insertion: '#60a5fa',
-      Deletion: '#f97316',
-      CNV: '#fb7185',
+      HIGH: '#f97316',
+      MODERATE: '#38bdf8',
+      LOW: '#34d399',
+      MODIFIER: '#a78bfa',
     } as const
 
     variants.forEach((variant) => {
-      counts[variant.type] = (counts[variant.type] ?? 0) + 1
+      counts[variant.predictedImpact] = (counts[variant.predictedImpact] ?? 0) + 1
     })
 
     return Object.entries(counts).map(([name, value]) => ({
@@ -59,7 +64,7 @@ export const analysisService = {
     }))
   },
 
-  buildManhattanPoints(variants: GenomeVariant[]): ManhattanPoint[] {
+  buildGenomeContextPoints(variants: VariantAnnotation[]): GenomeContextPoint[] {
     return [...variants]
       .sort(
         (left, right) =>
@@ -68,26 +73,28 @@ export const analysisService = {
       )
       .map((variant, index) => ({
         id: variant.id,
-        gene: variant.gene,
+        geneSymbol: variant.geneSymbol,
         chromosome: variant.chromosome,
         position: index + 1,
-        score: Number((-Math.log10(Math.max(variant.pValue, 1e-12))).toFixed(2)),
+        score: variant.score,
         fill: colorByIndex(chromosomeRank(variant.chromosome)),
       }))
   },
 
-  filterVariants(variants: GenomeVariant[], filters: VariantFilters) {
+  filterVariants(variants: VariantAnnotation[], filters: VariantFilters) {
     const search = filters.search?.trim().toLowerCase()
 
     return variants.filter((variant) => {
       if (search) {
         const haystack = [
           variant.id,
-          variant.gene,
+          variant.geneId,
+          variant.geneSymbol,
           variant.chromosome,
           variant.transcript,
-          variant.clinicalSignificance,
+          ...variant.consequenceTerms,
         ]
+          .filter(Boolean)
           .join(' ')
           .toLowerCase()
 
@@ -108,11 +115,8 @@ export const analysisService = {
         }
       }
 
-      if (
-        filters.clinicalSignificance &&
-        filters.clinicalSignificance !== 'all'
-      ) {
-        if (variant.clinicalSignificance !== filters.clinicalSignificance) {
+      if (filters.predictedImpact && filters.predictedImpact !== 'all') {
+        if (variant.predictedImpact !== filters.predictedImpact) {
           return false
         }
       }

@@ -1,14 +1,23 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { DEFAULT_SPECIES_ID, getSpeciesDefinition, SPECIES_OPTIONS } from '@/lib/constants'
 import {
   annotateVcfWithEnsembl,
-  supportsEnsemblAnnotation,
+  supportsPlantAnnotation,
   VcfAnnotationInputError,
 } from '@/lib/ensembl'
+import { buildWorkbenchFromQuery } from '@/lib/researchAggregator'
 import { createUploadedAnalysis } from '@/lib/mockData'
+import type { AssemblyId } from '@/types/genome'
 
 const requestSchema = z.object({
-  genomeBuild: z.enum(['hg38', 'hg19', 't2t']),
+  speciesId: z.enum(
+    SPECIES_OPTIONS.map((species) => species.id) as [
+      (typeof SPECIES_OPTIONS)[number]['id'],
+      ...(typeof SPECIES_OPTIONS)[number]['id'][],
+    ],
+  ),
+  assemblyId: z.string().min(1),
 })
 
 export const runtime = 'nodejs'
@@ -18,40 +27,58 @@ export async function POST(request: Request) {
     const formData = await request.formData()
     const file = formData.get('file')
     const validation = requestSchema.safeParse({
-      genomeBuild: formData.get('genomeBuild'),
+      speciesId: formData.get('speciesId') ?? DEFAULT_SPECIES_ID,
+      assemblyId: formData.get('assemblyId') ?? getSpeciesDefinition(DEFAULT_SPECIES_ID).defaultAssemblyId,
     })
 
     if (!(file instanceof File) || !validation.success) {
       return NextResponse.json(
-        { message: 'Нужны файл и корректная сборка генома.' },
+        { message: 'Нужны файл, speciesId и assemblyId.' },
         { status: 400 },
       )
     }
 
-    const genomeBuild = validation.data.genomeBuild
+    const { speciesId, assemblyId } = validation.data
+    const speciesDefinition = getSpeciesDefinition(speciesId)
 
-    if (!supportsEnsemblAnnotation(file.name, genomeBuild)) {
-      return NextResponse.json(createUploadedAnalysis(file, genomeBuild))
+    if (!speciesDefinition.assemblies.some((assembly) => assembly.id === assemblyId)) {
+      return NextResponse.json(
+        { message: 'Assembly does not belong to selected species.' },
+        { status: 400 },
+      )
+    }
+    const normalizedAssemblyId = assemblyId as AssemblyId
+
+    if (!supportsPlantAnnotation(file.name)) {
+      return NextResponse.json(createUploadedAnalysis(file, speciesId, normalizedAssemblyId))
     }
 
     try {
       const result = await annotateVcfWithEnsembl(await file.text(), {
         fileName: file.name,
         fileSize: file.size,
-        genomeBuild,
+        speciesId,
+          assemblyId: normalizedAssemblyId,
       })
+      const focusGene = result.variants.find((variant) => variant.geneId)?.geneId
+      const workbench = focusGene
+        ? await buildWorkbenchFromQuery(focusGene, speciesId).catch(() => null)
+        : null
 
-      return NextResponse.json(result)
+      return NextResponse.json({
+        ...result,
+        workbench,
+      })
     } catch (error) {
       if (error instanceof VcfAnnotationInputError) {
         return NextResponse.json({ message: error.message }, { status: 400 })
       }
 
-      return NextResponse.json(createUploadedAnalysis(file, genomeBuild))
+      return NextResponse.json(createUploadedAnalysis(file, speciesId, normalizedAssemblyId))
     }
   } catch {
     return NextResponse.json(
-      { message: 'Не удалось обработать файл и подготовить анализ.' },
+      { message: 'Не удалось обработать файл и подготовить plant analysis.' },
       { status: 500 },
     )
   }

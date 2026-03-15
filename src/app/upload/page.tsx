@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation'
 import {
   AlertCircle,
   CheckCircle2,
-  Dna,
+  Database,
   File,
-  ShieldCheck,
+  Leaf,
   Upload,
   X,
 } from 'lucide-react'
@@ -22,13 +22,21 @@ import {
 } from '@/components/ui/Card'
 import { Spinner } from '@/components/ui/Spinner'
 import { useAnalysisStore } from '@/hooks/useAnalysisStore'
-import { GENOME_BUILDS, SUPPORTED_FORMATS } from '@/lib/constants'
-import type { GenomeBuildId } from '@/types/genome'
+import {
+  DEFAULT_SPECIES_ID,
+  getSpeciesDefinition,
+  SPECIES_OPTIONS,
+  SUPPORTED_FORMATS,
+} from '@/lib/constants'
+import type { AssemblyId, SpeciesId } from '@/types/genome'
 
 export default function UploadPage() {
   const router = useRouter()
   const [file, setFile] = useState<File | null>(null)
-  const [genomeBuild, setGenomeBuild] = useState<GenomeBuildId>('hg38')
+  const [speciesId, setSpeciesId] = useState<SpeciesId>(DEFAULT_SPECIES_ID)
+  const [assemblyId, setAssemblyId] = useState<AssemblyId>(
+    getSpeciesDefinition(DEFAULT_SPECIES_ID).defaultAssemblyId,
+  )
   const [isDragging, setIsDragging] = useState(false)
   const [localError, setLocalError] = useState<string | null>(null)
   const {
@@ -45,6 +53,7 @@ export default function UploadPage() {
     [],
   )
   const activeError = localError ?? error
+  const species = getSpeciesDefinition(speciesId)
 
   const handleFileSelection = useCallback(
     (nextFile: File) => {
@@ -74,10 +83,10 @@ export default function UploadPage() {
     }
 
     try {
-      const summary = await uploadFile(file, genomeBuild)
+      const summary = await uploadFile(file, speciesId, assemblyId)
       router.push(`/dashboard?id=${summary.id}`)
     } catch {
-      // Store state already contains a user-facing error.
+      // Store already contains user-facing error.
     }
   }
 
@@ -88,41 +97,74 @@ export default function UploadPage() {
           <Badge variant="outline" className="w-fit">
             Upload workspace
           </Badge>
-          <CardTitle className="text-3xl">Загрузка геномных данных</CardTitle>
+          <CardTitle className="text-3xl">Plant-aware upload pipeline</CardTitle>
           <CardDescription>
-            Выберите файл, сборку генома и запустите анализ. Для `VCF` на `hg38/hg19`
-            используется реальная аннотация через Ensembl VEP, для остальных
-            сценариев остаётся fallback-пайплайн.
+            Выберите species, assembly и файл. Для `VCF` приложение строит plant-specific
+            variant cards, а затем разворачивает research context вокруг focus gene.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-[1fr_240px]">
+          <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2 text-sm font-medium text-slate-300">
-              Сборка генома
+              Species
               <select
                 className="w-full rounded-2xl border border-genome-border bg-muted/60 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-primary"
-                value={genomeBuild}
-                onChange={(event) =>
-                  setGenomeBuild(event.target.value as GenomeBuildId)
-                }
+                value={speciesId}
+                onChange={(event) => {
+                  const nextSpecies = event.target.value as SpeciesId
+                  const nextDefinition = getSpeciesDefinition(nextSpecies)
+                  setSpeciesId(nextSpecies)
+                  setAssemblyId(nextDefinition.defaultAssemblyId)
+                }}
               >
-                {GENOME_BUILDS.map((build) => (
-                  <option key={build.id} value={build.id}>
-                    {build.name}
+                {SPECIES_OPTIONS.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.label}
                   </option>
                 ))}
               </select>
             </label>
 
+            <label className="space-y-2 text-sm font-medium text-slate-300">
+              Assembly
+              <select
+                className="w-full rounded-2xl border border-genome-border bg-muted/60 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-primary"
+                value={assemblyId}
+                onChange={(event) => setAssemblyId(event.target.value as AssemblyId)}
+              >
+                {species.assemblies.map((assembly) => (
+                  <option key={assembly.id} value={assembly.id}>
+                    {assembly.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-[1fr_240px]">
             <div className="rounded-2xl border border-genome-border bg-muted/40 p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
                 Pipeline mode
               </p>
-              <p className="mt-3 text-sm font-semibold text-white">Ensembl VEP + fallback</p>
+              <p className="mt-3 text-sm font-semibold text-white">Plant research workbench</p>
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                `VCF`-варианты аннотируются через внешний Ensembl REST API. `FASTA`,
-                `BAM`, `BED` и `T2T` по-прежнему идут через демонстрационный
-                fallback, потому что для них нужен полноценный backend-пайплайн.
+                `VCF` проходит через Ensembl overlap-driven annotation и heuristic impact
+                inference. Остальные форматы получают structured fallback с focus gene,
+                variant cards и переходом в unified dashboard.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-genome-border bg-muted/40 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                Arabidopsis depth
+              </p>
+              <p className="mt-3 text-sm font-semibold text-white">
+                {species.capabilities.arabidopsisDepth ? 'Maximum' : 'Baseline'}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                {species.capabilities.arabidopsisDepth
+                  ? 'Expression, regulation и literature view будут максимально насыщены.'
+                  : 'Интерфейс сохранится, но часть карточек будет baseline-level.'}
               </p>
             </div>
           </div>
@@ -152,12 +194,11 @@ export default function UploadPage() {
                   <Upload size={34} />
                 </div>
                 <h2 className="text-xl font-semibold text-white">
-                  Перетащите файл в область загрузки
+                  Перетащите plant genomics файл в область загрузки
                 </h2>
                 <p className="mt-3 max-w-xl text-sm leading-7 text-slate-400">
-                  Поддерживаются FASTA, VCF, BAM и BED. Для VCF на hg38/hg19
-                  приложение отправляет вариантные записи в Ensembl VEP и строит
-                  дашборд из реальной аннотации.
+                  Для `VCF` вы получите plant-specific consequence terms, для `BAM/FASTA/BED`
+                  интерфейс сохранит context через structured fallback и focus gene.
                 </p>
                 <Button
                   size="lg"
@@ -246,7 +287,7 @@ export default function UploadPage() {
           {progress === 100 && !activeError && file ? (
             <div className="flex gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-primary">
               <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
-              <p>Анализ завершён. Открываю дашборд с результатами.</p>
+              <p>Анализ завершён. Открываю plant research dashboard.</p>
             </div>
           ) : null}
         </CardContent>
@@ -257,7 +298,7 @@ export default function UploadPage() {
           <CardHeader>
             <CardTitle>Поддерживаемые форматы</CardTitle>
             <CardDescription>
-              Форматы указаны в README и реально валидируются в интерфейсе загрузки.
+              Все форматы валидируются в UI, но VCF получает самую богатую аннотацию.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -280,25 +321,23 @@ export default function UploadPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Безопасность и среда</CardTitle>
+            <CardTitle>Research context after upload</CardTitle>
             <CardDescription>
-              Здесь описана схема загрузки, проксирования и fallback-обработки.
+              Загруженный анализ не заканчивается на variant table.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-start gap-3 rounded-2xl border border-genome-border bg-muted/40 p-4">
-              <ShieldCheck className="mt-0.5 h-5 w-5 text-primary" />
+              <Leaf className="mt-0.5 h-5 w-5 text-primary" />
               <p className="text-sm leading-6 text-slate-400">
-                Файл отправляется только во внутренний route приложения. Для
-                `VCF/hg38/hg19` route проксирует аннотацию в Ensembl REST API,
-                не открывая внешний сервис напрямую из браузера.
+                Dashboard разворачивает focus gene в expression, regulation, GO, orthology
+                и evidence cards.
               </p>
             </div>
             <div className="flex items-start gap-3 rounded-2xl border border-genome-border bg-muted/40 p-4">
-              <Dna className="mt-0.5 h-5 w-5 text-secondary" />
+              <Database className="mt-0.5 h-5 w-5 text-secondary" />
               <p className="text-sm leading-6 text-slate-400">
-                Выбор сборки генома сохраняется в summary и отображается в дашборде и
-                истории отчётов.
+                История запусков сохраняет species, assembly, focus gene и export-ready variant view.
               </p>
             </div>
           </CardContent>

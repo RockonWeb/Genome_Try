@@ -1,334 +1,599 @@
+import { getSpeciesDefinition } from '@/lib/constants'
 import type {
   AnalysisSummary,
-  ClinicalSignificance,
-  GenomeBuildId,
-  GenomeVariant,
-  SupportedFormat,
+  AssemblyId,
+  GeneProfile,
+  LiteratureCard,
+  SourceStatus,
+  SpeciesId,
   UploadAnalysisResult,
+  VariantAnnotation,
+  WorkbenchData,
 } from '@/types/genome'
 
-const pathogenicSet = new Set<ClinicalSignificance>([
-  'Pathogenic',
-  'Likely Pathogenic',
-])
+const now = '2026-03-15'
 
-const variantBlueprints: Array<Omit<GenomeVariant, 'id'>> = [
+const average = (values: number[]) =>
+  values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0
+
+const sourceStatus = (): SourceStatus[] => [
   {
-    gene: 'BRCA1',
-    chromosome: 'chr17',
-    position: 43071077,
-    reference: 'A',
-    alternate: 'G',
-    type: 'SNV',
-    impact: 'High',
-    quality: 99.4,
-    clinicalSignificance: 'Pathogenic',
-    depth: 118,
-    pValue: 8.1e-9,
-    transcript: 'NM_007294.4',
-    notes: 'Вариант связан с повышенным риском наследственного рака молочной железы.',
+    source: 'ensembl',
+    label: 'Ensembl Plants REST',
+    status: 'online',
+    coverage: 'full',
+    detail: 'Lookup, overlap и orthology доступны.',
+    lastChecked: now,
   },
   {
-    gene: 'CFTR',
-    chromosome: 'chr7',
-    position: 117559593,
-    reference: 'T',
-    alternate: 'C',
-    type: 'SNV',
-    impact: 'Moderate',
-    quality: 96.7,
-    clinicalSignificance: 'Likely Pathogenic',
-    depth: 96,
-    pValue: 2.3e-8,
-    transcript: 'NM_000492.4',
-    notes: 'Требует сопоставления с фенотипом и панелью наследственных заболеваний.',
+    source: 'thalemine',
+    label: 'BAR ThaleMine',
+    status: 'online',
+    coverage: 'partial',
+    detail: 'Curated Arabidopsis summary и search доступны.',
+    lastChecked: now,
   },
   {
-    gene: 'TP53',
-    chromosome: 'chr17',
-    position: 7673803,
-    reference: 'G',
-    alternate: 'A',
-    type: 'SNV',
-    impact: 'High',
-    quality: 98.1,
-    clinicalSignificance: 'Pathogenic',
-    depth: 142,
-    pValue: 1.1e-7,
-    transcript: 'NM_000546.6',
-    notes: 'Нужна проверка соматического или герминального происхождения.',
+    source: 'expression-atlas',
+    label: 'Expression Atlas',
+    status: 'online',
+    coverage: 'partial',
+    detail: 'Bioentity metadata и atlas links доступны.',
+    lastChecked: now,
   },
   {
-    gene: 'APOE',
-    chromosome: 'chr19',
-    position: 44908684,
-    reference: 'C',
-    alternate: 'T',
-    type: 'SNV',
-    impact: 'Low',
-    quality: 93.8,
-    clinicalSignificance: 'Likely Benign',
-    depth: 87,
-    pValue: 6.8e-6,
-    transcript: 'NM_000041.4',
-    notes: 'Полезен как сопутствующий риск-фактор, но не как самостоятельный вывод.',
+    source: 'europepmc',
+    label: 'Europe PMC',
+    status: 'online',
+    coverage: 'full',
+    detail: 'Literature cards и citation counts доступны.',
+    lastChecked: now,
   },
   {
-    gene: 'HBB',
-    chromosome: 'chr11',
-    position: 5227002,
-    reference: 'CT',
-    alternate: 'C',
-    type: 'Deletion',
-    impact: 'Moderate',
-    quality: 95.4,
-    clinicalSignificance: 'VUS',
-    depth: 102,
-    pValue: 4.4e-5,
-    transcript: 'NM_000518.5',
-    notes: 'Интерпретация зависит от гаплотипа и сопутствующих гемоглобинопатий.',
-  },
-  {
-    gene: 'EGFR',
-    chromosome: 'chr7',
-    position: 55249071,
-    reference: 'G',
-    alternate: 'GAAG',
-    type: 'Insertion',
-    impact: 'High',
-    quality: 97.6,
-    clinicalSignificance: 'Likely Pathogenic',
-    depth: 111,
-    pValue: 3.8e-7,
-    transcript: 'NM_005228.5',
-    notes: 'Вариант рекомендуется проверить в таргетной панели для клинического подтверждения.',
-  },
-  {
-    gene: 'SMN1',
-    chromosome: 'chr5',
-    position: 70247773,
-    reference: 'N',
-    alternate: 'DEL',
-    type: 'CNV',
-    impact: 'High',
-    quality: 91.2,
-    clinicalSignificance: 'Pathogenic',
-    depth: 74,
-    pValue: 9.5e-6,
-    transcript: 'NM_000344.4',
-    notes: 'CNV-профиль требует подтверждения по глубине покрытия и ортогональным методом.',
-  },
-  {
-    gene: 'MTHFR',
-    chromosome: 'chr1',
-    position: 11796321,
-    reference: 'C',
-    alternate: 'T',
-    type: 'SNV',
-    impact: 'Low',
-    quality: 89.9,
-    clinicalSignificance: 'Benign',
-    depth: 90,
-    pValue: 9.2e-5,
-    transcript: 'NM_005957.5',
-    notes: 'Частый полиморфизм без самостоятельной клинической значимости.',
-  },
-  {
-    gene: 'LDLR',
-    chromosome: 'chr19',
-    position: 11124171,
-    reference: 'G',
-    alternate: 'A',
-    type: 'SNV',
-    impact: 'Moderate',
-    quality: 96.2,
-    clinicalSignificance: 'Likely Pathogenic',
-    depth: 105,
-    pValue: 7.4e-8,
-    transcript: 'NM_000527.5',
-    notes: 'Соотносится с гиперхолестеринемическими профилями риска.',
-  },
-  {
-    gene: 'COL1A1',
-    chromosome: 'chr17',
-    position: 50198544,
-    reference: 'G',
-    alternate: 'T',
-    type: 'SNV',
-    impact: 'Moderate',
-    quality: 94.5,
-    clinicalSignificance: 'VUS',
-    depth: 98,
-    pValue: 2.5e-5,
-    transcript: 'NM_000088.4',
-    notes: 'Нужен клинический контекст и семейный сегрегационный анализ.',
-  },
-  {
-    gene: 'DMD',
-    chromosome: 'chrX',
-    position: 31137345,
-    reference: 'A',
-    alternate: 'T',
-    type: 'SNV',
-    impact: 'High',
-    quality: 97.9,
-    clinicalSignificance: 'Pathogenic',
-    depth: 84,
-    pValue: 1.9e-7,
-    transcript: 'NM_004006.3',
-    notes: 'Вариант в гене DMD требует учёта пола пациента и покрытия экзонов.',
-  },
-  {
-    gene: 'MLH1',
-    chromosome: 'chr3',
-    position: 37051241,
-    reference: 'C',
-    alternate: 'A',
-    type: 'SNV',
-    impact: 'High',
-    quality: 98.6,
-    clinicalSignificance: 'Likely Pathogenic',
-    depth: 126,
-    pValue: 4.2e-9,
-    transcript: 'NM_000249.4',
-    notes: 'Имеет приоритет для follow-up в сценариях наследственного колоректального риска.',
+    source: 'tair',
+    label: 'TAIR',
+    status: 'degraded',
+    coverage: 'link-only',
+    detail: 'Опциональный premium connector не активирован.',
+    lastChecked: now,
   },
 ]
 
-const average = (values: number[]) => {
-  if (!values.length) {
-    return 0
-  }
+type GeneSeed = {
+  profile: GeneProfile
+  expression: WorkbenchData['expression']
+  regulation: WorkbenchData['regulation']
+  functionTerms: WorkbenchData['functionTerms']
+  interactions: WorkbenchData['interactions']
+  orthology: WorkbenchData['orthology']
+  literature: LiteratureCard[]
+}
 
-  return values.reduce((sum, value) => sum + value, 0) / values.length
+const geneCatalog: Record<string, GeneSeed> = {
+  AT1G01010: {
+    profile: {
+      id: 'AT1G01010',
+      symbol: 'NAC001',
+      name: 'NAC domain containing protein 1',
+      speciesId: 'arabidopsis_thaliana',
+      assemblyId: 'TAIR10',
+      biotype: 'protein_coding',
+      description:
+        'Member of the NAC family of plant-specific transcriptional regulators with membrane-associated behavior and stress-related evidence.',
+      aliases: ['ANAC001', 'NTL10', 'AT1G01010'],
+      location: { chromosome: '1', start: 3631, end: 5899, strand: 1 },
+      sourceSummaries: [
+        {
+          source: 'thalemine',
+          label: 'BAR ThaleMine',
+          description:
+            'Curated Arabidopsis summary highlights NAC-family transcription regulation and membrane association.',
+        },
+        {
+          source: 'ensembl',
+          label: 'Ensembl Plants',
+          description: 'Reference gene model on TAIR10 with canonical transcript AT1G01010.1.',
+        },
+      ],
+      externalLinks: [
+        {
+          label: 'Ensembl gene page',
+          source: 'Ensembl Plants',
+          url: 'https://plants.ensembl.org/Arabidopsis_thaliana/Gene/Summary?g=AT1G01010',
+        },
+        {
+          label: 'Expression Atlas',
+          source: 'Expression Atlas',
+          url: 'https://www.ebi.ac.uk/gxa/genes/AT1G01010?species=arabidopsis_thaliana',
+        },
+      ],
+      lastUpdated: now,
+    },
+    expression: {
+      summary:
+        'Выражен в leaf, root и floral tissues; expression atlas hints at condition-sensitive regulation in stress-associated contexts.',
+      tissues: [
+        { label: 'Leaf', value: 72, unit: 'relative', context: 'PO leaf structures', source: 'Expression Atlas' },
+        { label: 'Root', value: 61, unit: 'relative', context: 'PO root', source: 'Expression Atlas' },
+        { label: 'Flower', value: 48, unit: 'relative', context: 'PO flowering tissues', source: 'Expression Atlas' },
+      ],
+      conditions: [
+        { label: 'Salt stress', value: 1.9, unit: 'log2 FC hint', context: 'stress-associated evidence card', source: 'Literature synthesis' },
+        { label: 'Membrane release cues', value: 1.3, unit: 'relative hint', context: 'regulated TF activation', source: 'Curated synthesis' },
+      ],
+      source: 'Expression Atlas + curated synthesis',
+      atlasLink:
+        'https://www.ebi.ac.uk/gxa/genes/AT1G01010?species=arabidopsis_thaliana',
+      lastUpdated: now,
+    },
+    regulation: [
+      {
+        title: 'Stress-responsive NAC regulator',
+        summary:
+          'Curated Arabidopsis resources and recent literature position NAC001/NTL10 within stress-responsive transcriptional regulation.',
+        evidenceType: 'curated',
+        source: 'BAR ThaleMine',
+        tags: ['NAC family', 'transcription factor', 'stress'],
+        score: 88,
+      },
+      {
+        title: 'Membrane-associated activation logic',
+        summary:
+          'GO and InterPro annotations indicate a membrane-associated transcription factor context with regulated nuclear activity.',
+        evidenceType: 'computational',
+        source: 'Expression Atlas bioentity info',
+        tags: ['membrane', 'nucleus', 'DNA binding'],
+        score: 74,
+      },
+    ],
+    functionTerms: [
+      { id: 'GO:0006355', label: 'regulation of transcription, DNA-templated', category: 'BP', source: 'GO' },
+      { id: 'GO:0000976', label: 'transcription regulatory region sequence-specific DNA binding', category: 'MF', source: 'GO' },
+      { id: 'GO:0005634', label: 'nucleus', category: 'CC', source: 'GO' },
+      { id: 'PO:0009005', label: 'root', category: 'PO', source: 'Plant Ontology' },
+    ],
+    interactions: [
+      {
+        partnerId: 'AT2G43010',
+        partnerLabel: 'PIF4',
+        relation: 'shared stress and developmental transcription context',
+        source: 'curated Arabidopsis synthesis',
+        confidence: 0.67,
+      },
+      {
+        partnerId: 'AT5G10140',
+        partnerLabel: 'FLC',
+        relation: 'co-mentioned in regulation-focused flowering/stress evidence',
+        source: 'literature synthesis',
+        confidence: 0.48,
+      },
+    ],
+    orthology: [
+      {
+        speciesLabel: 'Marchantia polymorpha',
+        geneId: 'Mp4g22890',
+        geneLabel: 'Mp4g22890',
+        relationship: 'ortholog_one2many',
+        source: 'Ensembl Plants',
+        confidence: 0.19,
+      },
+      {
+        speciesLabel: 'Physcomitrium patens',
+        geneId: 'Pp3c16_23260',
+        geneLabel: 'Pp3c16_23260',
+        relationship: 'ortholog_one2many',
+        source: 'Ensembl Plants',
+        confidence: 0.2,
+      },
+    ],
+    literature: [
+      {
+        id: 'PMID:34100001',
+        title: 'NAC membrane-associated regulators coordinate Arabidopsis stress acclimation',
+        journal: 'Plant Physiology',
+        year: 2022,
+        authors: ['Lee J', 'Kumar R'],
+        snippet:
+          'Recent work connects membrane-tethered NAC regulators with rapid transcriptional rewiring during abiotic stress.',
+        url: 'https://europepmc.org/search?query=AT1G01010%20Arabidopsis',
+        source: 'Europe PMC',
+        citedByCount: 27,
+      },
+    ],
+  },
+  AT2G43010: {
+    profile: {
+      id: 'AT2G43010',
+      symbol: 'PIF4',
+      name: 'phytochrome interacting factor 4',
+      speciesId: 'arabidopsis_thaliana',
+      assemblyId: 'TAIR10',
+      biotype: 'protein_coding',
+      description:
+        'Central integrator of temperature, light and growth signalling with broad transcriptional regulation roles.',
+      aliases: ['PIF4', 'AT2G43010'],
+      location: { chromosome: '2', start: 17927859, end: 17930420, strand: -1 },
+      sourceSummaries: [
+        {
+          source: 'ensembl',
+          label: 'Ensembl Plants',
+          description: 'Canonical Arabidopsis gene with strong comparative genomics coverage.',
+        },
+      ],
+      externalLinks: [
+        {
+          label: 'Expression Atlas',
+          source: 'Expression Atlas',
+          url: 'https://www.ebi.ac.uk/gxa/genes/AT2G43010?species=arabidopsis_thaliana',
+        },
+      ],
+      lastUpdated: now,
+    },
+    expression: {
+      summary:
+        'Высокая связь с light/temperature-responsive programs and dynamic expression under developmental transitions.',
+      tissues: [
+        { label: 'Hypocotyl', value: 81, unit: 'relative', context: 'seedling growth', source: 'Curated synthesis' },
+        { label: 'Leaf', value: 57, unit: 'relative', context: 'light response', source: 'Curated synthesis' },
+      ],
+      conditions: [
+        { label: 'Warm temperature', value: 2.4, unit: 'log2 FC hint', context: 'thermomorphogenesis', source: 'Literature synthesis' },
+      ],
+      source: 'Curated synthesis',
+      lastUpdated: now,
+    },
+    regulation: [
+      {
+        title: 'Thermomorphogenesis regulator',
+        summary: 'PIF4 sits at the center of temperature and light response regulatory programs.',
+        evidenceType: 'literature',
+        source: 'Europe PMC',
+        tags: ['light', 'temperature', 'growth'],
+        score: 93,
+      },
+    ],
+    functionTerms: [
+      { id: 'GO:0006355', label: 'regulation of transcription, DNA-templated', category: 'BP', source: 'GO' },
+      { id: 'GO:0003700', label: 'DNA-binding transcription factor activity', category: 'MF', source: 'GO' },
+    ],
+    interactions: [
+      {
+        partnerId: 'AT1G65480',
+        partnerLabel: 'FT',
+        relation: 'shared flowering transition context',
+        source: 'Curated synthesis',
+        confidence: 0.61,
+      },
+    ],
+    orthology: [],
+    literature: [
+      {
+        id: 'PMID:35620011',
+        title: 'PIF4 and environmental signal integration in Arabidopsis development',
+        journal: 'Trends in Plant Science',
+        year: 2023,
+        authors: ['Martinez C'],
+        snippet:
+          'Review article synthesizing recent evidence for PIF4 as a hub connecting photoreceptor and thermosensory pathways.',
+        url: 'https://europepmc.org/search?query=PIF4%20Arabidopsis',
+        source: 'Europe PMC',
+        citedByCount: 44,
+      },
+    ],
+  },
+}
+
+const variantBlueprints: Array<
+  Omit<VariantAnnotation, 'id' | 'score' | 'source' | 'lastUpdated'>
+> = [
+  {
+    geneId: 'AT1G01010',
+    geneSymbol: 'NAC001',
+    chromosome: '1',
+    position: 3714,
+    reference: 'G',
+    alternate: 'A',
+    type: 'SNV',
+    predictedImpact: 'MODERATE',
+    consequenceTerms: ['missense_variant', 'DNA_binding_region'],
+    featureType: 'gene',
+    transcript: 'AT1G01010.1',
+    evidenceType: 'curated',
+    quality: 97.1,
+    depth: 64,
+    notes:
+      'Located in NAC001 coding sequence; prioritize for expression/regulation follow-up in stress-associated experiments.',
+  },
+  {
+    geneId: 'AT2G43010',
+    geneSymbol: 'PIF4',
+    chromosome: '2',
+    position: 17929021,
+    reference: 'C',
+    alternate: 'T',
+    type: 'SNV',
+    predictedImpact: 'HIGH',
+    consequenceTerms: ['stop_gained'],
+    featureType: 'gene',
+    transcript: 'AT2G43010.1',
+    evidenceType: 'heuristic',
+    quality: 92.7,
+    depth: 71,
+    notes:
+      'High-priority coding consequence in a major developmental regulator; check supporting reads and phenotype concordance.',
+  },
+  {
+    geneId: 'AT5G10140',
+    geneSymbol: 'FLC',
+    chromosome: '5',
+    position: 3132500,
+    reference: 'A',
+    alternate: 'ATG',
+    type: 'Insertion',
+    predictedImpact: 'HIGH',
+    consequenceTerms: ['frameshift_variant'],
+    featureType: 'gene',
+    transcript: 'AT5G10140.1',
+    evidenceType: 'heuristic',
+    quality: 91.4,
+    depth: 58,
+    notes:
+      'Frameshift-like event within flowering-time regulator candidate; strong candidate for vernalization-related interpretation.',
+  },
+  {
+    geneId: 'AT1G65480',
+    geneSymbol: 'FT',
+    chromosome: '1',
+    position: 24389765,
+    reference: 'T',
+    alternate: 'C',
+    type: 'SNV',
+    predictedImpact: 'LOW',
+    consequenceTerms: ['synonymous_variant'],
+    featureType: 'gene',
+    transcript: 'AT1G65480.1',
+    evidenceType: 'curated',
+    quality: 95.5,
+    depth: 83,
+    notes:
+      'Synonymous change in FT; keep as contextual variant unless expression or splice evidence suggests otherwise.',
+  },
+  {
+    geneId: 'AT3G24650',
+    geneSymbol: 'ABI3',
+    chromosome: '3',
+    position: 8891078,
+    reference: 'G',
+    alternate: 'A',
+    type: 'SNV',
+    predictedImpact: 'MODERATE',
+    consequenceTerms: ['missense_variant', 'seed_maturation_context'],
+    featureType: 'gene',
+    transcript: 'AT3G24650.1',
+    evidenceType: 'curated',
+    quality: 90.2,
+    depth: 69,
+    notes:
+      'Candidate missense change in ABI3; relevant for seed maturation and dormancy follow-up.',
+  },
+  {
+    geneId: 'AT4G18780',
+    geneSymbol: 'RHD6',
+    chromosome: '4',
+    position: 10349233,
+    reference: 'GA',
+    alternate: 'G',
+    type: 'Deletion',
+    predictedImpact: 'MODERATE',
+    consequenceTerms: ['inframe_deletion'],
+    featureType: 'gene',
+    transcript: 'AT4G18780.1',
+    evidenceType: 'heuristic',
+    quality: 88.8,
+    depth: 61,
+    notes:
+      'Deletion within root-hair development candidate; useful when studying root system architecture.',
+  },
+]
+
+const scoreVariant = (
+  impact: VariantAnnotation['predictedImpact'],
+  quality: number,
+  depth: number,
+) => {
+  const weights = {
+    HIGH: 3.2,
+    MODERATE: 2.5,
+    LOW: 1.4,
+    MODIFIER: 0.8,
+  } as const
+
+  return Number((weights[impact] + quality / 60 + Math.min(depth, 100) / 80).toFixed(2))
 }
 
 const createVariantSet = (
   prefix: string,
   shift: number,
   qualityPenalty: number,
-): GenomeVariant[] =>
-  variantBlueprints.map((variant, index) => ({
-    ...variant,
-    id: `${prefix}-V${String(index + 1).padStart(2, '0')}`,
-    position: variant.position + shift + index * 19,
-    quality: Number(
-      Math.max(82, variant.quality - qualityPenalty + (index % 3) * 0.4).toFixed(
-        1,
-      ),
-    ),
-    depth: variant.depth + (index % 4) * 3,
-    pValue: Number((variant.pValue * (1 + shift / 4000)).toExponential(2)),
-  }))
+): VariantAnnotation[] =>
+  variantBlueprints.map((variant, index) => {
+    const quality = Number(
+      Math.max(81, variant.quality - qualityPenalty + (index % 3) * 0.6).toFixed(1),
+    )
+    const depth = variant.depth + (index % 4) * 4
+
+    return {
+      ...variant,
+      id: `${prefix}-V${String(index + 1).padStart(2, '0')}`,
+      position: variant.position + shift + index * 7,
+      quality,
+      depth,
+      score: scoreVariant(variant.predictedImpact, quality, depth),
+      source: 'local research sandbox',
+      lastUpdated: now,
+    }
+  })
 
 const createSummary = ({
   id,
   sampleId,
   fileName,
   format,
-  genomeBuild,
+  speciesId,
+  assemblyId,
   date,
   status,
-  variantCount,
-  coverage,
   fileSizeMb,
   variants,
 }: {
   id: string
   sampleId: string
   fileName: string
-  format: SupportedFormat
-  genomeBuild: GenomeBuildId
+  format: AnalysisSummary['format']
+  speciesId: SpeciesId
+  assemblyId: AssemblyId
   date: string
   status: AnalysisSummary['status']
-  variantCount: number
-  coverage: number
   fileSizeMb: number
-  variants: GenomeVariant[]
+  variants: VariantAnnotation[]
 }): AnalysisSummary => ({
   id,
   sampleId,
   fileName,
   format,
-  genomeBuild,
+  speciesId,
+  assemblyId,
   date,
   status,
-  variantCount,
-  highImpactVariants: variants.filter((variant) => variant.impact === 'High').length,
-  pathogenicVariants: variants.filter((variant) =>
-    pathogenicSet.has(variant.clinicalSignificance),
-  ).length,
-  coverage,
+  variantCount: variants.length,
+  highImpactVariants: variants.filter((variant) => variant.predictedImpact === 'HIGH').length,
+  meanDepth: Number(average(variants.map((variant) => variant.depth)).toFixed(1)),
   meanQuality: Number(average(variants.map((variant) => variant.quality)).toFixed(1)),
   fileSizeMb,
+  focusGene: variants[0]?.geneSymbol ?? 'N/A',
+  insightCount: variants.length + 6,
 })
 
-const completedAnalysisA = createVariantSet('GS-7721', 0, 0)
-const completedAnalysisB = createVariantSet('GS-7718', 137, 1.8)
-const completedAnalysisC = createVariantSet('GS-7699', 269, 0.9)
+const analysisA = createVariantSet('PS-AT-4102', 0, 0)
+const analysisB = createVariantSet('PS-AT-4094', 19, 1.8)
+const analysisC = createVariantSet('PS-AT-4078', 37, 2.6)
 
-export const mockVariantsByAnalysis: Record<string, GenomeVariant[]> = {
-  'GS-7721': completedAnalysisA,
-  'GS-7718': completedAnalysisB,
-  'GS-7699': completedAnalysisC,
+export const getAllMockVariants = () =>
+  [analysisA, analysisB, analysisC].flatMap((variants) => variants)
+
+export const getMockWorkbench = (
+  geneId: string,
+  speciesId: SpeciesId = 'arabidopsis_thaliana',
+): WorkbenchData => {
+  const species = getSpeciesDefinition(speciesId)
+  const gene = geneCatalog[geneId] ?? geneCatalog.AT1G01010
+  const variants = getAllMockVariants().filter((variant) => variant.geneId === gene.profile.id)
+
+  return {
+    query: {
+      raw: gene.profile.id,
+      normalized: gene.profile.id,
+      type: 'gene',
+      speciesId,
+      assemblyId: species.defaultAssemblyId,
+      geneId: gene.profile.id,
+      geneSymbol: gene.profile.symbol,
+    },
+    species,
+    gene: gene.profile,
+    locus: {
+      chromosome: gene.profile.location.chromosome,
+      start: gene.profile.location.start,
+      end: gene.profile.location.end,
+      regionLabel: `${gene.profile.location.chromosome}:${gene.profile.location.start}-${gene.profile.location.end}`,
+      overlappingGeneIds: [gene.profile.id],
+      source: 'mock catalog',
+    },
+    variants,
+    expression: gene.expression,
+    regulation: gene.regulation,
+    functionTerms: gene.functionTerms,
+    interactions: gene.interactions,
+    orthology: gene.orthology,
+    literature: gene.literature,
+    supportingLinks: gene.profile.externalLinks,
+    sourceStatus: sourceStatus(),
+  }
 }
 
 export const mockReports: AnalysisSummary[] = [
   createSummary({
-    id: 'GS-7721',
-    sampleId: 'GS-7721',
-    fileName: 'sample_a1_full_genome.vcf',
+    id: 'PS-AT-4102',
+    sampleId: 'PS-AT-4102',
+    fileName: 'arabidopsis_stress_panel.vcf',
     format: 'VCF',
-    genomeBuild: 'hg38',
+    speciesId: 'arabidopsis_thaliana',
+    assemblyId: 'TAIR10',
+    date: '2026-03-14',
+    status: 'completed',
+    fileSizeMb: 194,
+    variants: analysisA,
+  }),
+  createSummary({
+    id: 'PS-AT-4094',
+    sampleId: 'PS-AT-4094',
+    fileName: 'seed_dormancy_followup.bam',
+    format: 'BAM',
+    speciesId: 'arabidopsis_thaliana',
+    assemblyId: 'TAIR10',
     date: '2026-03-12',
     status: 'completed',
-    variantCount: 1842,
-    coverage: 36.4,
-    fileSizeMb: 4860,
-    variants: completedAnalysisA,
+    fileSizeMb: 812,
+    variants: analysisB,
   }),
   createSummary({
-    id: 'GS-7718',
-    sampleId: 'GS-7718',
-    fileName: 'patient_x_exome.bam',
-    format: 'BAM',
-    genomeBuild: 'hg19',
-    date: '2026-03-10',
-    status: 'completed',
-    variantCount: 684,
-    coverage: 118.7,
-    fileSizeMb: 420,
-    variants: completedAnalysisB,
-  }),
-  createSummary({
-    id: 'GS-7715',
-    sampleId: 'GS-7715',
-    fileName: 'rapid_panel_run.bed',
+    id: 'PS-AT-4089',
+    sampleId: 'PS-AT-4089',
+    fileName: 'root_architecture_targets.bed',
     format: 'BED',
-    genomeBuild: 'hg38',
-    date: '2026-03-09',
+    speciesId: 'arabidopsis_thaliana',
+    assemblyId: 'TAIR10',
+    date: '2026-03-11',
     status: 'processing',
-    variantCount: 0,
-    coverage: 0,
-    fileSizeMb: 118,
+    fileSizeMb: 38,
     variants: [],
   }),
   createSummary({
-    id: 'GS-7699',
-    sampleId: 'GS-7699',
-    fileName: 'control_sample_v2.fasta',
+    id: 'PS-AT-4078',
+    sampleId: 'PS-AT-4078',
+    fileName: 'cross_species_baseline.fasta',
     format: 'FASTA',
-    genomeBuild: 't2t',
-    date: '2026-02-28',
+    speciesId: 'oryza_sativa',
+    assemblyId: 'IRGSP-1.0',
+    date: '2026-03-07',
     status: 'completed',
-    variantCount: 1328,
-    coverage: 28.9,
-    fileSizeMb: 5120,
-    variants: completedAnalysisC,
+    fileSizeMb: 1260,
+    variants: analysisC,
   }),
 ]
 
-const getFormatFromFileName = (fileName: string): SupportedFormat => {
+export const mockAnalysesById: Record<string, UploadAnalysisResult> = {
+  'PS-AT-4102': {
+    summary: mockReports[0],
+    variants: analysisA,
+    workbench: getMockWorkbench('AT1G01010'),
+  },
+  'PS-AT-4094': {
+    summary: mockReports[1],
+    variants: analysisB,
+    workbench: getMockWorkbench('AT2G43010'),
+  },
+  'PS-AT-4078': {
+    summary: mockReports[3],
+    variants: analysisC,
+    workbench: getMockWorkbench('AT1G01010', 'oryza_sativa'),
+  },
+}
+
+export const getMockGeneProfile = (geneId: string): GeneProfile | null =>
+  geneCatalog[geneId]?.profile ?? null
+
+const getFormatFromFileName = (fileName: string): AnalysisSummary['format'] => {
   const extension = fileName.slice(fileName.lastIndexOf('.')).toLowerCase()
 
   switch (extension) {
@@ -345,12 +610,14 @@ const getFormatFromFileName = (fileName: string): SupportedFormat => {
 
 export const createUploadedAnalysis = (
   file: File,
-  genomeBuild: GenomeBuildId,
+  speciesId: SpeciesId,
+  assemblyId: AssemblyId,
 ): UploadAnalysisResult => {
   const seed = Array.from(file.name).reduce((sum, char) => sum + char.charCodeAt(0), 0)
-  const id = `GS-${String(Date.now()).slice(-5)}`
-  const variants = createVariantSet(id, seed % 240, (seed % 5) * 0.7)
-  const fileSizeMb = Math.max(96, Math.round(file.size / (1024 * 1024)) || 128)
+  const id = `PS-${speciesId === 'arabidopsis_thaliana' ? 'AT' : 'PL'}-${String(Date.now()).slice(-4)}`
+  const variants = createVariantSet(id, seed % 90, (seed % 5) * 0.6)
+  const focusGene = variants[seed % variants.length]?.geneId ?? 'AT1G01010'
+  const fileSizeMb = Math.max(12, Math.round(file.size / (1024 * 1024)) || 96)
 
   return {
     summary: createSummary({
@@ -358,14 +625,14 @@ export const createUploadedAnalysis = (
       sampleId: id,
       fileName: file.name,
       format: getFormatFromFileName(file.name),
-      genomeBuild,
-      date: new Date().toISOString().slice(0, 10),
+      speciesId,
+      assemblyId,
+      date: now,
       status: 'completed',
-      variantCount: 1200 + (seed % 900),
-      coverage: Number((24 + (seed % 18) + average(variants.map((item) => item.depth)) / 30).toFixed(1)),
       fileSizeMb,
       variants,
     }),
     variants,
+    workbench: getMockWorkbench(focusGene, speciesId),
   }
 }

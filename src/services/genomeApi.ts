@@ -1,32 +1,57 @@
-import { mockReports, mockVariantsByAnalysis } from '@/lib/mockData'
+import { mockAnalysesById, mockReports } from '@/lib/mockData'
 import type {
   AnalysisSummary,
-  GenomeBuildId,
-  GenomeVariant,
+  AssemblyId,
+  SpeciesId,
   UploadAnalysisResult,
 } from '@/types/genome'
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-const cloneSummary = (summary: AnalysisSummary): AnalysisSummary => ({ ...summary })
-
-const cloneVariants = (variants: GenomeVariant[]): GenomeVariant[] =>
-  variants.map((variant) => ({ ...variant }))
+const cloneResult = (result: UploadAnalysisResult): UploadAnalysisResult => ({
+  summary: { ...result.summary },
+  variants: result.variants.map((variant) => ({ ...variant })),
+  workbench: result.workbench
+    ? {
+        ...result.workbench,
+        query: { ...result.workbench.query },
+        gene: result.workbench.gene ? { ...result.workbench.gene } : null,
+        locus: result.workbench.locus ? { ...result.workbench.locus } : null,
+        variants: result.workbench.variants.map((variant) => ({ ...variant })),
+        expression: result.workbench.expression
+          ? {
+              ...result.workbench.expression,
+              tissues: result.workbench.expression.tissues.map((item) => ({ ...item })),
+              conditions: result.workbench.expression.conditions.map((item) => ({ ...item })),
+            }
+          : null,
+        regulation: result.workbench.regulation.map((item) => ({ ...item })),
+        functionTerms: result.workbench.functionTerms.map((item) => ({ ...item })),
+        interactions: result.workbench.interactions.map((item) => ({ ...item })),
+        orthology: result.workbench.orthology.map((item) => ({ ...item })),
+        literature: result.workbench.literature.map((item) => ({ ...item })),
+        supportingLinks: result.workbench.supportingLinks.map((item) => ({ ...item })),
+        sourceStatus: result.workbench.sourceStatus.map((item) => ({ ...item })),
+      }
+    : null,
+})
 
 export const genomeApi = {
   async uploadFile(
     file: File,
     onProgress: (progress: number) => void,
-    genomeBuild: GenomeBuildId,
+    speciesId: SpeciesId,
+    assemblyId: AssemblyId,
   ): Promise<UploadAnalysisResult> {
-    for (const step of [12, 24, 39, 57, 72, 86]) {
+    for (const step of [10, 22, 38, 56, 71, 86]) {
       await delay(140)
       onProgress(step)
     }
 
     const formData = new FormData()
     formData.append('file', file)
-    formData.append('genomeBuild', genomeBuild)
+    formData.append('speciesId', speciesId)
+    formData.append('assemblyId', assemblyId)
 
     const response = await fetch('/api/analysis/upload', {
       method: 'POST',
@@ -46,23 +71,17 @@ export const genomeApi = {
     }
 
     onProgress(100)
-
     return payload as UploadAnalysisResult
   },
 
-  async getVariants(id: string): Promise<GenomeVariant[]> {
-    await delay(320)
-    return cloneVariants(mockVariantsByAnalysis[id] ?? [])
-  },
-
   async getReports(): Promise<AnalysisSummary[]> {
-    await delay(260)
-    return mockReports.map(cloneSummary)
+    await delay(220)
+    return mockReports.map((report) => ({ ...report }))
   },
 
-  async getAnalysisSummary(id: string): Promise<AnalysisSummary | null> {
-    await delay(180)
-    const summary = mockReports.find((report) => report.id === id)
-    return summary ? cloneSummary(summary) : null
+  async getAnalysisResult(id: string): Promise<UploadAnalysisResult | null> {
+    await delay(260)
+    const result = mockAnalysesById[id]
+    return result ? cloneResult(result) : null
   },
 }

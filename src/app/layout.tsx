@@ -1,18 +1,19 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { IBM_Plex_Sans } from 'next/font/google'
 import { Footer } from '@/components/layout/Footer'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { APP_CONFIG } from '@/lib/constants'
 import './globals.css'
 
-const inter = Inter({
-  variable: '--font-inter',
+const plex = IBM_Plex_Sans({
+  variable: '--font-plex',
   subsets: ['latin', 'cyrillic'],
+  weight: ['400', '500', '600', '700'],
 })
 
 export const metadata: Metadata = {
-  title: `${APP_CONFIG.name} — Геномный анализатор`,
+  title: `${APP_CONFIG.name} — Plant Genomics Research Assistant`,
   description: APP_CONFIG.description,
 }
 
@@ -24,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="ru" className="dark">
       <body
-        className={`${inter.variable} min-h-dvh bg-genome-bg font-sans text-foreground antialiased selection:bg-primary/20`}
+        className={`${plex.variable} min-h-dvh bg-genome-bg font-sans text-foreground antialiased selection:bg-primary/20`}
       >
         <div className="noise-bg fixed inset-0" />
         <div className="relative flex min-h-dvh">

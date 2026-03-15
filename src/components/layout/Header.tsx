@@ -9,20 +9,24 @@ import { Tooltip } from '@/components/ui/Tooltip'
 
 const pageMeta: Record<string, { title: string; subtitle: string }> = {
   '/': {
-    title: 'Исследовательская панель',
-    subtitle: 'Платформа для визуализации и приоритизации геномных находок.',
+    title: 'Plant genomics workspace',
+    subtitle: 'Dual-mode platform for Arabidopsis-first research and species-generic exploration.',
+  },
+  '/workbench': {
+    title: 'Research workbench',
+    subtitle: 'Search by AGI, symbol, locus or variant and aggregate evidence in one view.',
   },
   '/upload': {
-    title: 'Загрузка данных',
-    subtitle: 'Подготовка исходных файлов и запуск нового анализа.',
+    title: 'Upload pipeline',
+    subtitle: 'Plant-aware upload flow with focus gene, variant context and downstream evidence.',
   },
   '/dashboard': {
-    title: 'Аналитический дашборд',
-    subtitle: 'Ключевые метрики, Manhattan plot и таблица приоритетных вариантов.',
+    title: 'Upload-driven dashboard',
+    subtitle: 'Unified research view anchored on the current uploaded analysis.',
   },
   '/reports': {
-    title: 'История отчётов',
-    subtitle: 'Архив завершённых, текущих и проблемных запусков.',
+    title: 'Run archive',
+    subtitle: 'History of completed and processing plant genomics analyses.',
   },
 }
 
@@ -39,7 +43,7 @@ export const Header = () => {
           </div>
           <div className="min-w-0">
             <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">
-              GenomeScope workspace
+              PhytoScope workspace
             </p>
             <h1 className="truncate text-sm font-semibold text-white md:text-base">
               {meta.title}
@@ -59,9 +63,9 @@ export const Header = () => {
 
         <div className="flex items-center gap-2 md:gap-3">
           <Badge variant="success" className="hidden md:inline-flex">
-            Ensembl VEP ready
+            Arabidopsis-first
           </Badge>
-          <Tooltip content="Новых лабораторных оповещений нет">
+          <Tooltip content="Новых системных оповещений нет">
             <button
               type="button"
               className="rounded-full border border-genome-border bg-genome-card/70 p-2 text-slate-400 transition-colors hover:text-white"
@@ -71,7 +75,7 @@ export const Header = () => {
             </button>
           </Tooltip>
           <Button asChild size="sm" className="hidden sm:inline-flex">
-            <Link href="/upload">Новый анализ</Link>
+            <Link href="/workbench">Новый поиск</Link>
           </Button>
         </div>
       </div>

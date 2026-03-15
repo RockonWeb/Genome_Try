@@ -11,6 +11,7 @@ import {
   FileText,
   HardDrive,
   Layers3,
+  Trees,
   XCircle,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
@@ -34,7 +35,7 @@ import {
 import { useAnalysisStore } from '@/hooks/useAnalysisStore'
 import { downloadVariantsCsv, printAnalysisReport } from '@/lib/exporters'
 import { genomeApi } from '@/services/genomeApi'
-import type { AnalysisSummary, GenomeVariant } from '@/types/genome'
+import type { AnalysisSummary, UploadAnalysisResult } from '@/types/genome'
 
 const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
   year: 'numeric',
@@ -43,8 +44,7 @@ const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
 })
 
 export default function ReportsPage() {
-  const { reports, variantsByAnalysis, isLoading, error, fetchReports } =
-    useAnalysisStore()
+  const { reports, analysesById, isLoading, error, fetchReports } = useAnalysisStore()
   const [exportingId, setExportingId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -59,33 +59,35 @@ export default function ReportsPage() {
     () => reports.reduce((sum, report) => sum + report.fileSizeMb, 0) / 1024,
     [reports],
   )
-  const averageCoverage = useMemo(() => {
+  const averageDepth = useMemo(() => {
     if (!completedReports.length) {
       return 0
     }
 
     return (
-      completedReports.reduce((sum, report) => sum + report.coverage, 0) /
+      completedReports.reduce((sum, report) => sum + report.meanDepth, 0) /
       completedReports.length
     )
   }, [completedReports])
 
   const latestCompletedReport = completedReports[0] ?? null
 
-  const getReportVariants = async (report: AnalysisSummary): Promise<GenomeVariant[]> => {
-    if (variantsByAnalysis[report.id]) {
-      return variantsByAnalysis[report.id]
+  const getReportResult = async (report: AnalysisSummary): Promise<UploadAnalysisResult | null> => {
+    if (analysesById[report.id]) {
+      return analysesById[report.id]
     }
 
-    return genomeApi.getVariants(report.id)
+    return genomeApi.getAnalysisResult(report.id)
   }
 
   const exportCsv = async (report: AnalysisSummary) => {
     setExportingId(report.id)
 
     try {
-      const variants = await getReportVariants(report)
-      downloadVariantsCsv(report, variants)
+      const result = await getReportResult(report)
+      if (result) {
+        downloadVariantsCsv(report, result.variants)
+      }
     } finally {
       setExportingId(null)
     }
@@ -95,8 +97,10 @@ export default function ReportsPage() {
     setExportingId(report.id)
 
     try {
-      const variants = await getReportVariants(report)
-      printAnalysisReport(report, variants)
+      const result = await getReportResult(report)
+      if (result) {
+        printAnalysisReport(report, result.variants)
+      }
     } finally {
       setExportingId(null)
     }
@@ -109,10 +113,10 @@ export default function ReportsPage() {
           <div>
             <Badge variant="outline">Reports archive</Badge>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-white">
-              История отчётов
+              История plant reports
             </h1>
             <p className="mt-2 text-sm text-slate-400">
-              Завершённые анализы, активные прогоны и быстрый экспорт результатов.
+              Completed runs, активные запуски и быстрый переход в upload-first dashboard.
             </p>
           </div>
           <Button asChild>
@@ -124,16 +128,16 @@ export default function ReportsPage() {
         </div>
 
         <section className="grid gap-4 md:grid-cols-3">
-          <ReportMetric title="Completed" value={`${completedReports.length}`} helper="Готовы для экспорта" />
-          <ReportMetric title="Processing" value={`${processingReports.length}`} helper="Активные или ожидающие" />
-          <ReportMetric title="Avg coverage" value={`${averageCoverage.toFixed(1)}x`} helper="По завершённым отчётам" />
+          <ReportMetric title="Completed" value={`${completedReports.length}`} helper="Готовы к research review" />
+          <ReportMetric title="Processing" value={`${processingReports.length}`} helper="Ещё в pipeline" />
+          <ReportMetric title="Avg depth" value={`${averageDepth.toFixed(1)}`} helper="По завершённым отчётам" />
         </section>
 
         <Card>
           <CardHeader>
-            <CardTitle>Список анализов</CardTitle>
+            <CardTitle>Список запусков</CardTitle>
             <CardDescription>
-              Открывайте дашборд, выгружайте CSV и печатайте PDF напрямую из истории.
+              Открывайте dashboard, выгружайте CSV и печатайте PDF напрямую из архива.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -146,11 +150,11 @@ export default function ReportsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Sample</TableHead>
+                    <TableHead>Run</TableHead>
                     <TableHead>Дата</TableHead>
-                    <TableHead>Формат</TableHead>
+                    <TableHead>Species</TableHead>
+                    <TableHead>Focus gene</TableHead>
                     <TableHead>Статус</TableHead>
-                    <TableHead>Coverage</TableHead>
                     <TableHead className="text-right">Действия</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -171,11 +175,11 @@ export default function ReportsPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {report.format} · {report.genomeBuild}
+                          {report.speciesId} · {report.assemblyId}
                         </Badge>
                       </TableCell>
+                      <TableCell>{report.focusGene}</TableCell>
                       <TableCell>{renderStatus(report.status)}</TableCell>
-                      <TableCell>{report.coverage ? `${report.coverage}x` : '—'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button asChild variant="ghost" size="icon" title="Открыть дашборд">
@@ -226,7 +230,7 @@ export default function ReportsPage() {
           <CardHeader>
             <CardTitle>Хранилище</CardTitle>
             <CardDescription>
-              Простой контроль объёма данных, сохранённых в истории отчётов.
+              Простая оценка локального архива запусков.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -246,35 +250,38 @@ export default function ReportsPage() {
               />
             </div>
             <p className="text-sm leading-6 text-slate-400">
-              В интерфейсе заложена логика хранения и масштабирования истории анализов.
-              При подключении backend можно заменить этот блок на реальные квоты и архивацию.
+              При подключении полноценного backend этот блок можно заменить на реальные квоты,
+              storage tiers и cold archive rules.
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Последний завершённый отчёт</CardTitle>
+            <CardTitle>Последний завершённый run</CardTitle>
             <CardDescription>
-              Быстрый доступ к самому свежему completed-run.
+              Быстрый доступ к самому свежему completed analysis.
             </CardDescription>
           </CardHeader>
           <CardContent>
             {latestCompletedReport ? (
               <div className="space-y-4">
                 <div className="rounded-2xl border border-genome-border bg-muted/40 p-4">
-                  <p className="text-sm font-semibold text-white">
-                    {latestCompletedReport.fileName}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-400">
-                    {latestCompletedReport.variantCount.toLocaleString('ru-RU')} вариантов ·{' '}
-                    {latestCompletedReport.coverage}x coverage
+                  <div className="flex items-center gap-2">
+                    <Trees className="h-4 w-4 text-primary" />
+                    <p className="text-sm font-semibold text-white">
+                      {latestCompletedReport.fileName}
+                    </p>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-400">
+                    {latestCompletedReport.speciesId} · {latestCompletedReport.focusGene} ·{' '}
+                    {latestCompletedReport.highImpactVariants} high-impact variants
                   </p>
                 </div>
                 <div className="flex gap-3">
                   <Button asChild className="flex-1">
                     <Link href={`/dashboard?id=${latestCompletedReport.id}`}>
-                      Открыть дашборд
+                      Открыть dashboard
                     </Link>
                   </Button>
                   <Button

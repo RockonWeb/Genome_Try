@@ -1,4 +1,4 @@
-import type { AnalysisSummary, GenomeVariant } from '@/types/genome'
+import type { AnalysisSummary, VariantAnnotation } from '@/types/genome'
 
 const numberFormatter = new Intl.NumberFormat('ru-RU')
 
@@ -31,51 +31,51 @@ const downloadBlob = (filename: string, content: string, mimeType: string) => {
 
 export const downloadVariantsCsv = (
   summary: AnalysisSummary,
-  variants: GenomeVariant[],
+  variants: VariantAnnotation[],
 ) => {
   const header = [
     'Variant ID',
-    'Gene',
+    'Gene ID',
+    'Gene Symbol',
     'Chromosome',
     'Position',
     'Reference',
     'Alternate',
     'Type',
-    'Impact',
-    'Clinical significance',
-    'Quality',
-    'Depth',
-    'p-value',
+    'Predicted impact',
+    'Consequences',
+    'Feature type',
     'Transcript',
+    'Source',
   ]
 
   const rows = variants.map((variant) =>
     [
       variant.id,
-      variant.gene,
+      variant.geneId ?? '',
+      variant.geneSymbol,
       variant.chromosome,
       variant.position,
       variant.reference,
       variant.alternate,
       variant.type,
-      variant.impact,
-      variant.clinicalSignificance,
-      variant.quality,
-      variant.depth,
-      variant.pValue,
+      variant.predictedImpact,
+      variant.consequenceTerms.join('; '),
+      variant.featureType,
       variant.transcript,
+      variant.source,
     ]
       .map(escapeCsvValue)
       .join(','),
   )
 
-  const filename = `${summary.sampleId.toLowerCase()}-variants.csv`
+  const filename = `${summary.sampleId.toLowerCase()}-plant-variants.csv`
   downloadBlob(filename, [header.join(','), ...rows].join('\n'), 'text/csv;charset=utf-8')
 }
 
 export const printAnalysisReport = (
   summary: AnalysisSummary,
-  variants: GenomeVariant[],
+  variants: VariantAnnotation[],
 ) => {
   if (typeof window === 'undefined') {
     return
@@ -92,37 +92,37 @@ export const printAnalysisReport = (
 <html lang="ru">
   <head>
     <meta charset="utf-8" />
-    <title>${escapeHtml(summary.sampleId)} - GenomeScope report</title>
+    <title>${escapeHtml(summary.sampleId)} - PhytoScope report</title>
     <style>
-      body { font-family: Inter, Arial, sans-serif; margin: 40px; color: #0f172a; }
+      body { font-family: Georgia, 'Times New Roman', serif; margin: 40px; color: #142033; }
       h1, h2 { margin: 0 0 12px; }
       p { margin: 0 0 8px; color: #334155; }
       .meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 24px 0; }
-      .card { border: 1px solid #cbd5e1; border-radius: 16px; padding: 16px; background: #f8fafc; }
+      .card { border: 1px solid #d4d4d8; border-radius: 18px; padding: 16px; background: #f8fafc; }
       table { width: 100%; border-collapse: collapse; margin-top: 24px; }
-      th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 13px; }
-      th { background: #eff6ff; color: #1e3a8a; }
+      th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 13px; vertical-align: top; }
+      th { background: #e0f2fe; color: #0f172a; }
       .muted { color: #64748b; font-size: 13px; }
     </style>
   </head>
   <body>
-    <h1>GenomeScope Analysis Report</h1>
-    <p class="muted">Подготовлено из текущего API-слоя GenomeScope. Используйте печать браузера для сохранения в PDF.</p>
+    <h1>PhytoScope Plant Research Report</h1>
+    <p class="muted">Сводка по текущему plant-aware analysis run. Используйте печать браузера для сохранения в PDF.</p>
 
     <div class="meta">
       <div class="card">
         <h2>Образец</h2>
         <p><strong>ID:</strong> ${escapeHtml(summary.sampleId)}</p>
         <p><strong>Файл:</strong> ${escapeHtml(summary.fileName)}</p>
-        <p><strong>Сборка:</strong> ${escapeHtml(summary.genomeBuild)}</p>
-        <p><strong>Формат:</strong> ${escapeHtml(summary.format)}</p>
+        <p><strong>Вид:</strong> ${escapeHtml(summary.speciesId)}</p>
+        <p><strong>Assembly:</strong> ${escapeHtml(summary.assemblyId)}</p>
       </div>
       <div class="card">
         <h2>Метрики</h2>
         <p><strong>Вариантов:</strong> ${numberFormatter.format(summary.variantCount)}</p>
         <p><strong>High impact:</strong> ${numberFormatter.format(summary.highImpactVariants)}</p>
-        <p><strong>Pathogenic:</strong> ${numberFormatter.format(summary.pathogenicVariants)}</p>
-        <p><strong>Coverage:</strong> ${summary.coverage}x</p>
+        <p><strong>Mean depth:</strong> ${summary.meanDepth}</p>
+        <p><strong>Focus gene:</strong> ${escapeHtml(summary.focusGene)}</p>
       </div>
     </div>
 
@@ -133,19 +133,19 @@ export const printAnalysisReport = (
           <th>Gene</th>
           <th>Variant</th>
           <th>Impact</th>
-          <th>Clinical significance</th>
-          <th>Depth</th>
+          <th>Consequences</th>
+          <th>Source</th>
         </tr>
       </thead>
       <tbody>
         ${topVariants
           .map(
             (variant) => `<tr>
-              <td>${escapeHtml(variant.gene)}</td>
+              <td>${escapeHtml(variant.geneSymbol)}</td>
               <td>${escapeHtml(`${variant.chromosome}:${variant.position} ${variant.reference}>${variant.alternate}`)}</td>
-              <td>${escapeHtml(variant.impact)}</td>
-              <td>${escapeHtml(variant.clinicalSignificance)}</td>
-              <td>${variant.depth}</td>
+              <td>${escapeHtml(variant.predictedImpact)}</td>
+              <td>${escapeHtml(variant.consequenceTerms.join(', '))}</td>
+              <td>${escapeHtml(variant.source)}</td>
             </tr>`,
           )
           .join('')}

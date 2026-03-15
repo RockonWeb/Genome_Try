@@ -2,22 +2,29 @@ import { create } from 'zustand'
 import { genomeApi } from '@/services/genomeApi'
 import type {
   AnalysisSummary,
-  GenomeBuildId,
-  GenomeVariant,
+  AssemblyId,
+  SpeciesId,
+  UploadAnalysisResult,
+  VariantAnnotation,
+  WorkbenchData,
 } from '@/types/genome'
 
 interface AnalysisState {
   currentAnalysis: AnalysisSummary | null
-  variants: GenomeVariant[]
+  variants: VariantAnnotation[]
+  currentWorkbench: WorkbenchData | null
   reports: AnalysisSummary[]
-  variantsByAnalysis: Record<string, GenomeVariant[]>
+  analysesById: Record<string, UploadAnalysisResult>
   isLoading: boolean
   progress: number
   error: string | null
-  uploadFile: (file: File, genomeBuild: GenomeBuildId) => Promise<AnalysisSummary>
+  uploadFile: (
+    file: File,
+    speciesId: SpeciesId,
+    assemblyId: AssemblyId,
+  ) => Promise<AnalysisSummary>
   fetchReports: () => Promise<void>
   fetchAnalysisResults: (id: string) => Promise<void>
-  setCurrentAnalysis: (analysis: AnalysisSummary | null) => void
   resetProgress: () => void
   clearError: () => void
 }
@@ -33,8 +40,9 @@ const uniqueReports = (reports: AnalysisSummary[]) =>
 export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   currentAnalysis: null,
   variants: [],
+  currentWorkbench: null,
   reports: [],
-  variantsByAnalysis: {},
+  analysesById: {},
   isLoading: false,
   progress: 0,
   error: null,
@@ -42,48 +50,38 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   resetProgress: () => set({ progress: 0, error: null }),
   clearError: () => set({ error: null }),
 
-  setCurrentAnalysis: (analysis) =>
-    set((state) => ({
-      currentAnalysis: analysis,
-      variants:
-        analysis && state.variantsByAnalysis[analysis.id]
-          ? state.variantsByAnalysis[analysis.id]
-          : state.variants,
-    })),
-
-  uploadFile: async (file, genomeBuild) => {
+  uploadFile: async (file, speciesId, assemblyId) => {
     set({ isLoading: true, error: null, progress: 0 })
 
     try {
       const result = await genomeApi.uploadFile(
         file,
         (progress) => set({ progress }),
-        genomeBuild,
+        speciesId,
+        assemblyId,
       )
 
       set((state) => ({
         currentAnalysis: result.summary,
         variants: result.variants,
-        variantsByAnalysis: {
-          ...state.variantsByAnalysis,
-          [result.summary.id]: result.variants,
+        currentWorkbench: result.workbench,
+        analysesById: {
+          ...state.analysesById,
+          [result.summary.id]: result,
         },
-        reports: sortReports(
-          uniqueReports([result.summary, ...state.reports]),
-        ),
+        reports: sortReports(uniqueReports([result.summary, ...state.reports])),
         isLoading: false,
         progress: 100,
       }))
 
       return result.summary
-    } catch (error) {
+    } catch {
       set({
-        error: 'Не удалось завершить загрузку и анализ файла.',
+        error: 'Не удалось завершить загрузку и plant-aware анализ файла.',
         isLoading: false,
         progress: 0,
       })
-
-      throw error
+      throw new Error('Upload failed')
     }
   },
 
@@ -94,9 +92,7 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
       const remoteReports = await genomeApi.getReports()
 
       set((state) => {
-        const mergedReports = sortReports(
-          uniqueReports([...state.reports, ...remoteReports]),
-        )
+        const mergedReports = sortReports(uniqueReports([...state.reports, ...remoteReports]))
 
         return {
           reports: mergedReports,
@@ -106,24 +102,19 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
       })
     } catch {
       set({
-        error: 'Не удалось загрузить список отчётов.',
+        error: 'Не удалось загрузить список plant reports.',
         isLoading: false,
       })
     }
   },
 
   fetchAnalysisResults: async (id) => {
-    const state = get()
-    const hasCachedVariants = Object.prototype.hasOwnProperty.call(
-      state.variantsByAnalysis,
-      id,
-    )
-    const cachedSummary = state.reports.find((report) => report.id === id) ?? null
-
-    if (cachedSummary && hasCachedVariants) {
+    const cached = get().analysesById[id]
+    if (cached) {
       set({
-        currentAnalysis: cachedSummary,
-        variants: state.variantsByAnalysis[id] ?? [],
+        currentAnalysis: cached.summary,
+        variants: cached.variants,
+        currentWorkbench: cached.workbench,
         error: null,
       })
       return
@@ -132,26 +123,21 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
     set({ isLoading: true, error: null })
 
     try {
-      const summary =
-        cachedSummary ?? (await genomeApi.getAnalysisSummary(id))
-      const variants = hasCachedVariants
-        ? state.variantsByAnalysis[id] ?? []
-        : await genomeApi.getVariants(id)
+      const result = await genomeApi.getAnalysisResult(id)
 
-      if (!summary) {
-        throw new Error('Missing analysis summary')
+      if (!result) {
+        throw new Error('Missing analysis result')
       }
 
-      set((currentState) => ({
-        currentAnalysis: summary,
-        variants,
-        variantsByAnalysis: {
-          ...currentState.variantsByAnalysis,
-          [id]: variants,
+      set((state) => ({
+        currentAnalysis: result.summary,
+        variants: result.variants,
+        currentWorkbench: result.workbench,
+        analysesById: {
+          ...state.analysesById,
+          [id]: result,
         },
-        reports: sortReports(
-          uniqueReports([...currentState.reports, summary]),
-        ),
+        reports: sortReports(uniqueReports([...state.reports, result.summary])),
         isLoading: false,
       }))
     } catch {

@@ -7,6 +7,7 @@ import {
   Home,
   LayoutDashboard,
   LogOut,
+  ScanSearch,
   Upload,
 } from 'lucide-react'
 import { APP_CONFIG } from '@/lib/constants'
@@ -14,9 +15,10 @@ import { cn } from '@/lib/utils'
 
 const navItems = [
   { href: '/', icon: Home, label: 'Главная' },
-  { href: '/upload', icon: Upload, label: 'Загрузка' },
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Дашборд' },
-  { href: '/reports', icon: FileText, label: 'Отчёты' },
+  { href: '/workbench', icon: ScanSearch, label: 'Workbench' },
+  { href: '/upload', icon: Upload, label: 'Upload' },
+  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/reports', icon: FileText, label: 'Reports' },
 ]
 
 const isActivePath = (pathname: string, href: string) =>
@@ -36,7 +38,7 @@ export const Sidebar = () => {
             <p className="text-lg font-semibold tracking-tight text-white">
               {APP_CONFIG.name}
             </p>
-            <p className="text-xs text-slate-500">Genomic research cockpit</p>
+            <p className="text-xs text-slate-500">Plant genomics research cockpit</p>
           </div>
         </div>
 
@@ -70,9 +72,9 @@ export const Sidebar = () => {
 
         <div className="mt-auto space-y-4 rounded-2xl border border-genome-border bg-genome-card/70 p-4">
           <div>
-            <p className="text-sm font-semibold text-white">Research support</p>
+            <p className="text-sm font-semibold text-white">Source strategy</p>
             <p className="mt-1 text-sm leading-relaxed text-slate-400">
-              VCF-аннотация уже подключена через Ensembl, а для тяжёлых форматов можно нарастить отдельный pipeline backend.
+              Open sources are primary. TAIR remains optional, while partial source failure degrades to link cards instead of breaking the page.
             </p>
           </div>
           <p className="text-xs text-slate-500">{APP_CONFIG.supportEmail}</p>

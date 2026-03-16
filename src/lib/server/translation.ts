@@ -15,6 +15,17 @@ type CachedTranslationPayload = {
 
 type TranslationProvider =
   | {
+      kind: 'google-web'
+      label: 'Google Translate'
+      endpoint: string
+    }
+  | {
+      kind: 'google'
+      label: 'Google Cloud Translation'
+      apiKey: string
+      endpoint: string
+    }
+  | {
       kind: 'deepl'
       label: 'DeepL'
       authKey: string
@@ -33,6 +44,19 @@ const NON_TRANSLATABLE_SNIPPETS = new Set(['Аннотация недоступ�
 const normalizeEndpoint = (value: string) => value.replace(/\/+$/, '')
 
 const getTranslationProvider = (): TranslationProvider | null => {
+  const googleApiKey = process.env.GOOGLE_CLOUD_TRANSLATE_API_KEY?.trim()
+  if (googleApiKey) {
+    return {
+      kind: 'google',
+      label: 'Google Cloud Translation',
+      apiKey: googleApiKey,
+      endpoint: normalizeEndpoint(
+        process.env.GOOGLE_CLOUD_TRANSLATE_API_URL?.trim() ||
+          'https://translation.googleapis.com',
+      ),
+    }
+  }
+
   const deeplAuthKey = process.env.DEEPL_API_KEY?.trim()
   if (deeplAuthKey) {
     return {
@@ -55,7 +79,14 @@ const getTranslationProvider = (): TranslationProvider | null => {
     }
   }
 
-  return null
+  return {
+    kind: 'google-web',
+    label: 'Google Translate',
+    endpoint: normalizeEndpoint(
+      process.env.GOOGLE_TRANSLATE_WEB_API_URL?.trim() ||
+        'https://translate.googleapis.com',
+    ),
+  }
 }
 
 const getTargetLanguageCode = (
@@ -157,6 +188,84 @@ const translateWithDeepL = async (
   )
 }
 
+const translateWithGoogle = async (
+  provider: Extract<TranslationProvider, { kind: 'google' }>,
+  texts: string[],
+  targetLanguage: TranslationTargetLanguage,
+) => {
+  const response = await fetch(
+    `${provider.endpoint}/language/translate/v2?key=${encodeURIComponent(provider.apiKey)}`,
+    {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+      body: JSON.stringify({
+        q: texts,
+        target: getTargetLanguageCode(provider, targetLanguage),
+        format: 'text',
+      }),
+    },
+  )
+
+  if (!response.ok) {
+    throw new Error(`Google Translate request failed: ${response.status}`)
+  }
+
+  const payload = (await response.json()) as {
+    data?: {
+      translations?: Array<{ translatedText?: string }>
+    }
+  }
+
+  return texts.map(
+    (text, index) =>
+      payload.data?.translations?.[index]?.translatedText?.trim() || text,
+  )
+}
+
+const translateWithGoogleWeb = async (
+  provider: Extract<TranslationProvider, { kind: 'google-web' }>,
+  texts: string[],
+  targetLanguage: TranslationTargetLanguage,
+) =>
+  Promise.all(
+    texts.map(async (text) => {
+      const response = await fetch(
+        `${provider.endpoint}/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(
+          getTargetLanguageCode(provider, targetLanguage),
+        )}&dt=t&q=${encodeURIComponent(text)}`,
+        {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+          },
+          cache: 'no-store',
+        },
+      )
+
+      if (!response.ok) {
+        throw new Error(`Google Translate request failed: ${response.status}`)
+      }
+
+      const payload = (await response.json()) as unknown
+      const translatedText = Array.isArray(payload)
+        ? (payload[0] as unknown[])
+            ?.map((segment) =>
+              Array.isArray(segment) && typeof segment[0] === 'string'
+                ? segment[0]
+                : '',
+            )
+            .join('')
+            .trim()
+        : ''
+
+      return translatedText || text
+    }),
+  )
+
 const translateWithLibreTranslate = async (
   provider: Extract<TranslationProvider, { kind: 'libretranslate' }>,
   texts: string[],
@@ -199,6 +308,14 @@ const translateTexts = async (
 ) => {
   if (!texts.length) {
     return []
+  }
+
+  if (provider.kind === 'google-web') {
+    return translateWithGoogleWeb(provider, texts, targetLanguage)
+  }
+
+  if (provider.kind === 'google') {
+    return translateWithGoogle(provider, texts, targetLanguage)
   }
 
   if (provider.kind === 'deepl') {

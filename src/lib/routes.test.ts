@@ -35,6 +35,43 @@ const installExternalFetchMock = () => {
           ? input.toString()
           : input.url
 
+    if (url.includes('translate.googleapis.com/translate_a/single')) {
+      state.translationUrls.push(url)
+
+      const parsedUrl = new URL(url)
+      const text = parsedUrl.searchParams.get('q') ?? ''
+
+      return jsonResponse([
+        [
+          [
+            text === 'The mTERF family regulates stress responses in tomato.'
+              ? 'Семейство mTERF регулирует стрессовые ответы у томата.'
+              : `Перевод: ${text}`,
+            text,
+          ],
+        ],
+      ])
+    }
+
+    if (url.includes('translation.googleapis.com/language/translate/v2')) {
+      state.translationUrls.push(url)
+
+      const body =
+        typeof init?.body === 'string' ? JSON.parse(init.body) : { q: [] }
+      const texts = Array.isArray(body.q) ? body.q : []
+
+      return jsonResponse({
+        data: {
+          translations: texts.map((text: string) => ({
+            translatedText:
+              text === 'The mTERF family regulates stress responses in tomato.'
+                ? 'Семейство mTERF регулирует стрессовые ответы у томата.'
+                : `Перевод: ${text}`,
+          })),
+        },
+      })
+    }
+
     if (url.includes('/v2/translate')) {
       state.translationUrls.push(url)
 
@@ -208,6 +245,9 @@ test.afterEach(() => {
   global.fetch = originalFetch
   resetDatabaseForTests()
   delete process.env.PHYTOSCOPE_DATA_DIR
+  delete process.env.GOOGLE_TRANSLATE_WEB_API_URL
+  delete process.env.GOOGLE_CLOUD_TRANSLATE_API_KEY
+  delete process.env.GOOGLE_CLOUD_TRANSLATE_API_URL
   delete process.env.DEEPL_API_KEY
   delete process.env.DEEPL_API_URL
   delete process.env.LIBRETRANSLATE_URL
@@ -302,7 +342,6 @@ test('POST /api/analysis/upload creates queued non-VCF runs with saved files', a
 
 test('GET /api/literature applies server-side filtering and sorting', async () => {
   process.env.PHYTOSCOPE_DATA_DIR = createTempDataDir()
-  process.env.DEEPL_API_KEY = 'test-deepl-key'
   resetDatabaseForTests()
   const fetchMock = installExternalFetchMock()
 
@@ -316,7 +355,10 @@ test('GET /api/literature applies server-side filtering and sorting', async () =
   assert.equal(response.status, 200)
   assert.equal(payload.query, 'AT1G01010')
   assert.match(fetchMock.europePmcUrls[0] ?? '', /resultType=core/)
-  assert.match(fetchMock.translationUrls[0] ?? '', /\/v2\/translate$/)
+  assert.match(
+    fetchMock.translationUrls[0] ?? '',
+    /translate\.googleapis\.com\/translate_a\/single/,
+  )
   assert.equal(payload.items.length, 2)
   assert.equal(
     payload.items[0].title,
@@ -332,7 +374,7 @@ test('GET /api/literature applies server-side filtering and sorting', async () =
     'The mTERF family regulates stress responses in tomato.',
   )
   assert.equal(payload.items[0].snippetTranslated, true)
-  assert.equal(payload.items[0].translationProvider, 'DeepL')
+  assert.equal(payload.items[0].translationProvider, 'Google Translate')
   assert.equal(payload.items[1].title, 'Newer lower citation article')
 })
 

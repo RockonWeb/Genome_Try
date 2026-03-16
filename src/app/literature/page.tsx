@@ -1,4 +1,5 @@
 import { LiteratureSearchForm } from '@/components/research/LiteratureSearchForm'
+import { LiteratureResultCard } from '@/components/research/LiteratureResultCard'
 import { Badge } from '@/components/ui/Badge'
 import {
   Card,
@@ -73,8 +74,8 @@ export default async function LiteraturePage({
             Статьи из Europe PMC с серверной фильтрацией по году, сортировкой по
             релевантности, цитируемости или новизне и быстрым переходом из
             рабочей области поиска. Аннотации можно автоматически переводить на
-            русский через{' '}
-            {translationProvider ?? 'настроенный серверный сервис'}.
+            русский через {translationProvider ?? 'бесплатный Google Translate'}
+            .
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -85,12 +86,6 @@ export default async function LiteraturePage({
             initialSort={result?.filters.sort ?? defaults.sort}
             initialTranslate={result?.filters.translate ?? translate}
           />
-          {!translationProvider ? (
-            <p className="mt-4 text-xs leading-6 text-slate-500">
-              Автоперевод включится после настройки `DEEPL_API_KEY` или
-              `LIBRETRANSLATE_URL` на сервере.
-            </p>
-          ) : null}
         </CardContent>
       </Card>
 
@@ -139,42 +134,7 @@ export default async function LiteraturePage({
             <CardContent className="grid gap-4 xl:grid-cols-2">
               {result.items.length ? (
                 result.items.map((item) => (
-                  <a
-                    key={item.id}
-                    href={item.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="border-genome-border bg-muted/40 hover:border-primary/40 rounded-2xl border p-5 transition-colors"
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline">{item.year}</Badge>
-                      <Badge variant="outline">{item.journal}</Badge>
-                      {item.snippetTranslated ? (
-                        <Badge variant="outline">
-                          Перевод {item.translationProvider ?? 'включён'}
-                        </Badge>
-                      ) : null}
-                      {item.citedByCount ? (
-                        <Badge variant="outline">
-                          {item.citedByCount} цитирований
-                        </Badge>
-                      ) : null}
-                    </div>
-                    <p className="mt-3 text-base font-semibold text-white">
-                      {item.title}
-                    </p>
-                    <p className="mt-3 text-sm leading-7 text-slate-300">
-                      {item.snippet}
-                    </p>
-                    {item.snippetTranslated && item.originalSnippet ? (
-                      <p className="mt-2 text-xs leading-6 text-slate-500">
-                        Оригинал: {item.originalSnippet}
-                      </p>
-                    ) : null}
-                    <p className="mt-3 text-xs tracking-[0.18em] text-slate-500 uppercase">
-                      {item.authors.join(', ') || 'Авторы не указаны'}
-                    </p>
-                  </a>
+                  <LiteratureResultCard key={item.id} item={item} />
                 ))
               ) : (
                 <div className="border-genome-border bg-muted/30 col-span-full rounded-3xl border border-dashed px-4 py-12 text-center text-sm text-slate-500">

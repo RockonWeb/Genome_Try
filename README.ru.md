@@ -65,10 +65,22 @@ npm run dev
 
 PhytoScope умеет автоматически переводить аннотации статей на русский в разделе литературы и в карточках workbench.
 
-Для этого настройте один из серверных провайдеров:
+По умолчанию приложение использует бесплатный Google Translate web endpoint и не требует API-ключа:
 
 ```bash
-# DeepL (предпочтительно)
+# Необязательная замена дефолтного бесплатного endpoint:
+# GOOGLE_TRANSLATE_WEB_API_URL=https://translate.googleapis.com
+```
+
+Если хочешь заменить его на выделенный провайдер, настрой один из серверных вариантов:
+
+```bash
+# Google Cloud Translation
+GOOGLE_CLOUD_TRANSLATE_API_KEY=your-key
+# Необязательная замена endpoint:
+# GOOGLE_CLOUD_TRANSLATE_API_URL=https://translation.googleapis.com
+
+# DeepL
 DEEPL_API_KEY=your-key
 # Необязательная замена для платного endpoint:
 # DEEPL_API_URL=https://api.deepl.com
@@ -78,7 +90,7 @@ LIBRETRANSLATE_URL=https://your-libtranslate-host
 LIBRETRANSLATE_API_KEY=optional-key
 ```
 
-Порядок выбора провайдера: сначала `DeepL`, затем `LibreTranslate`.
+Порядок выбора провайдера: сначала `Google Cloud Translation`, затем `DeepL`, затем `LibreTranslate`, а если ничего не настроено, приложение использует бесплатный Google Translate web endpoint.
 
 ## Скрипты
 

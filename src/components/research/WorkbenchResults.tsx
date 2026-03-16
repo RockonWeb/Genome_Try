@@ -12,6 +12,7 @@ import {
   Orbit,
   Route,
 } from 'lucide-react'
+import { LiteratureResultCard } from '@/components/research/LiteratureResultCard'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import {
@@ -410,40 +411,7 @@ export function WorkbenchResults({
         <CardContent className="grid gap-4 xl:grid-cols-2">
           {workbench.literature.length ? (
             workbench.literature.map((item) => (
-              <a
-                key={item.id}
-                href={item.url}
-                target="_blank"
-                rel="noreferrer"
-                className="border-genome-border bg-muted/40 hover:border-primary/40 rounded-2xl border p-5 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">{item.year}</Badge>
-                  <Badge variant="outline">{item.journal}</Badge>
-                  {item.snippetTranslated ? (
-                    <Badge variant="outline">
-                      Перевод {item.translationProvider ?? 'включён'}
-                    </Badge>
-                  ) : null}
-                </div>
-                <p className="mt-3 text-base font-semibold text-white">
-                  {item.title}
-                </p>
-                <p className="mt-3 text-sm leading-7 text-slate-300">
-                  {item.snippet}
-                </p>
-                {item.snippetTranslated && item.originalSnippet ? (
-                  <p className="mt-2 text-xs leading-6 text-slate-500">
-                    Оригинал: {item.originalSnippet}
-                  </p>
-                ) : null}
-                <p className="mt-3 text-xs tracking-[0.18em] text-slate-500 uppercase">
-                  {item.authors.join(', ')}
-                  {item.citedByCount
-                    ? ` · цитирований ${item.citedByCount}`
-                    : ''}
-                </p>
-              </a>
+              <LiteratureResultCard key={item.id} item={item} />
             ))
           ) : (
             <EmptyPanel message="Литературные карточки пока не собраны." />

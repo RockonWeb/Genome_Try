@@ -65,10 +65,22 @@ Open [http://localhost:3000](http://localhost:3000).
 
 PhytoScope can automatically translate literature abstracts into Russian in the literature workspace and workbench cards.
 
-Configure one of the following server-side providers:
+By default, the app uses the free Google Translate web endpoint and does not require an API key:
 
 ```bash
-# DeepL (preferred)
+# Optional override for the default free endpoint:
+# GOOGLE_TRANSLATE_WEB_API_URL=https://translate.googleapis.com
+```
+
+If you want to override it with a dedicated provider, configure one of the following server-side options:
+
+```bash
+# Google Cloud Translation
+GOOGLE_CLOUD_TRANSLATE_API_KEY=your-key
+# Optional endpoint override:
+# GOOGLE_CLOUD_TRANSLATE_API_URL=https://translation.googleapis.com
+
+# DeepL
 DEEPL_API_KEY=your-key
 # Optional override for paid plans:
 # DEEPL_API_URL=https://api.deepl.com
@@ -78,7 +90,7 @@ LIBRETRANSLATE_URL=https://your-libtranslate-host
 LIBRETRANSLATE_API_KEY=optional-key
 ```
 
-Provider selection order is `DeepL` first, then `LibreTranslate`.
+Provider selection order is `Google Cloud Translation`, then `DeepL`, then `LibreTranslate`, otherwise the app falls back to the free Google Translate web endpoint.
 
 ## Scripts
 
